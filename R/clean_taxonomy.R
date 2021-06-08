@@ -65,14 +65,22 @@ resolve_species <- function(taxa){
                           with_canonical_ranks = T)
   # subset for supplied name, unique ID, match score and matched name
   gnr_subset <- taxa_gnr %>% 
-    select(user_supplied_name, gni_uuid, score, matched_name2)
+    select(user_supplied_name, gni_uuid, score, matched_name2) %>%
+    rename(matched_name = matched_name2)
   # construct data frame from taxa input, make character, bind GNR output
-  taxa_out <- data.frame(Region = taxa$Region,
+  taxa_tab <- data.frame(Region = taxa$Region,
                          SpeciesName = taxa$SpeciesName, 
                          original_name = taxa$original_name,
                          submitted_name = copy_taxa) %>%
     mutate(submitted_name = as.character(submitted_name)) %>%
     left_join(., gnr_subset, by = c("submitted_name" = "user_supplied_name"))
+  
+  # add in ID for unidentified species
+  taxa_out <- taxa_tab %>% filter(is.na(gni_uuid)) %>% group_by(Region) %>% 
+    mutate(submitted_name = ifelse(is.na(gni_uuid), paste(Region, "NID", seq_len(nrow(.)), sep="_"), submitted_name),
+           matched_name = ifelse(is.na(gni_uuid), paste(Region, "NID", seq_len(nrow(.)), sep="_"), matched_name)) %>%
+    bind_rows(., taxa_tab) %>% filter(!is.na(matched_name))
+  
   # return
   return(taxa_out)
 }
