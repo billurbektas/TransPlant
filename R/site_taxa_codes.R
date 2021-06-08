@@ -26,6 +26,12 @@ load_SE_Abisko_sptable <- function() {
     
     se_dat <- se_dat %>% distinct()
     
+    # Clean up individual species issues
+    se_dat <- se_dat %>% 
+      mutate(code = recode(code, 'Hie alp' = "Hie sect. Alp", 'Luz mul' = "Luz mul (subsp fri)", 'Luz wah' = "Luz wal",
+             'Rum ace'= "Rum ace subsp lap", 'Cry fra' = 'Cys fra', 'Epi lac' = 'Epi lac', 'Equ pal' = 'Equ pal/pra', 'Ste nem' = 'Ste nem',
+             'Tri spi' = 'Tri spi', 'Ver fru' = 'Ver fru', 'Ver sp.' = 'Ver spe'))
+    
     return(se_dat)
 
 }

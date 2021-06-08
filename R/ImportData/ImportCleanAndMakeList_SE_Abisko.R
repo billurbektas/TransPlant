@@ -40,9 +40,9 @@ CleanCommunity_SE_Abisko <- function(community_SE_Abisko_raw){
     bind_rows(dat) %>% 
     mutate(Total_Cover = sum(Cover), Rel_Cover = Cover / Total_Cover)
   
-  comm <- dat2 %>% filter(!SpeciesName %in% c('Other'))  %>% 
-    filter(Cover > 0) #there are Litter, Lichen and Moss in the species list below, but nothing here? Hmmm...
-  cover <- dat2 %>% filter(SpeciesName %in% c('Other')) %>% 
+  comm <- dat2 %>% filter(!SpeciesName %in% c('Other', 'Sel sel', 'Sph spe'))  %>% #I removed moss but kept in ferns and clubmosses (large portion of community data and IDed to species)
+    filter(Cover > 0) 
+  cover <- dat2 %>% filter(SpeciesName %in% c('Other', 'Sel sel', 'Sph spe')) %>% 
     select(UniqueID, SpeciesName, Cover, Rel_Cover) %>% group_by(UniqueID, SpeciesName) %>% summarize(OtherCover=sum(Cover), Rel_OtherCover=sum(Rel_Cover)) %>%
     rename(CoverClass=SpeciesName)
   return(list(comm=comm, cover=cover)) 
