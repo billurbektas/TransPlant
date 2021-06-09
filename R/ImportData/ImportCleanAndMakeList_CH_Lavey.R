@@ -6,8 +6,7 @@ source("R/ImportData/community_CH_Lavey/load_comm.r")
 
 #### Import Community ####
 ImportCommunity_CH_Lavey <- function(){
-  ## ---- load_community
-  
+
   #load cover data and metadata
   community_CH_Lavey_raw <- load_cover_CH_Lavey()
   
@@ -22,21 +21,17 @@ CleanCommunity_CH_Lavey <- function(community_CH_Lavey_raw) {
     community_CH_Lavey_raw %>% 
     mutate(Treatment = recode(siteID, "CRE_CRE"= "LocalControl", "RIO_RIO"= "LocalControl", "MAR_MAR"= "LocalControl", "PRA_PRA"= "LocalControl", 
                               "CRE_RIO" = "Warm", "MAR_RIO" = "Warm", "PRA_RIO" = "Warm"),
-           #SpeciesShort= sapply(strsplit(SpeciesName, ' '), function(x) paste(toupper(substr(x, 1,3)), collapse='')),
            Collector = ifelse(year %in% c(2017), 'Jean', 'Loic'),
            cover = as.numeric(cover)) %>%
     separate(siteID, c('destSiteID', 'originSiteID'), sep='_') %>%
     rename(Cover = cover, Year = year, plotID = turfID  ) %>%         
-    # DDE: What now is plotID - used to be destPlotID. I now created a destPlotID below, including origin and dest siteID.
     # only select control, local control, warm/down transplant
     filter(Treatment %in% c("LocalControl", "Warm")) %>%
     mutate(UniqueID = paste(Year, originSiteID, destSiteID, plotID, sep='_'),
            destPlotID = paste(originSiteID, destSiteID, plotID, sep='_')) %>%
     select(-plotID) %>% 
     mutate(destPlotID = as.character(destPlotID), destBlockID = if (exists('destBlockID', where = .)) as.character(destBlockID) else NA) %>%
-    #transmute_at(vars(one_of(destBlockID, destPlotID)), as.character) #%>%
     group_by(UniqueID, Year, originSiteID, destSiteID, destPlotID, Treatment, Collector) %>%
-    #filter(Cover>5) %>%
     mutate(Total_Cover = sum(Cover), Rel_Cover = Cover / Total_Cover) 
   
   #Check relative cover sums to >=100

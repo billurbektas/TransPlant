@@ -35,8 +35,8 @@ CleanCommunity_DE_Susalps <- function(community_DE_Susalps_raw){
   
   
   dat2 <- dat %>%  
-    group_by_at(vars(-SpeciesName, -Cover)) %>%
     filter(!is.na(Cover)) %>% #not creating other cover as biomass, doesn't exist
+    group_by_at(vars(-SpeciesName, -Cover)) %>%
     mutate(Total_Cover = sum(Cover, na.rm=T), Rel_Cover = Cover / Total_Cover) %>%
     ungroup()
   
