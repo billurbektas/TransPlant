@@ -1,91 +1,133 @@
 #####################
-#### CH_Calanda2  ###
-# #####################
-# 
-# source("R/community_CH_Calanda2/loadcomm_JL.r")
-# 
-# #### Import Community ####
-# ImportCommunity_CH_Calanda2 <- function(){
-# 
-#   #load cover data and metadata
-#   community_CH_Calanda2_raw <- load_cover_CH_Calanda2()
-#   
-#   return(community_CH_Calanda2_raw)
-# }
-# 
-# #### Cleaning Code ####
-# # Cleaning Calanda2 community data
-# CleanCommunity_CH_Calanda2 <- function(community_CH_Calanda2_raw) {
-#   dat <- community_CH_Calanda2_raw %>% 
-#     mutate(Collector='Jacob', originSiteID = 'Cal',
-#            Treatment = case_when(Site == "Cal" ~ "LocalControl", 
-#                                  Site != "Cal" ~ "Warm")) %>%
-#     rename(destSiteID = Site, Cover = cover, Year = year, destPlotID = turfID) %>%
-#     mutate(UniqueID = paste(Year, originSiteID, destSiteID, destPlotID, sep='_')) %>%
-#     filter(!grepl('Focal', SpeciesName)) %>% 
-#     mutate(destPlotID = as.character(destPlotID), destBlockID = if (exists('destBlockID', where = .)) as.character(destBlockID) else NA)
-#   
-#   dat2 <- dat %>%
-#     filter(!is.na(Cover)) %>%
-#     group_by_at(vars(-SpeciesName, -Cover)) %>%
-#     summarise(SpeciesName = "Other", Cover = 100 - sum(Cover)) %>%
-#     bind_rows(dat) %>% 
-#     filter(Cover > 0)  %>% #omg so inelegant
-#     mutate(Total_Cover = sum(Cover, na.rm=T), Rel_Cover = Cover / Total_Cover)
-#   
-#   comm <- dat2 %>% filter(!SpeciesName %in% c('Other'))
-#   cover <- dat2 %>% filter(SpeciesName %in% c('Other')) %>% 
-#     select(UniqueID, SpeciesName, Cover, Rel_Cover) %>% group_by(UniqueID, SpeciesName) %>% summarize(OtherCover=sum(Cover), Rel_OtherCover=sum(Rel_Cover)) %>%
-#     rename(CoverClass=SpeciesName)
-#   return(list(comm=comm, cover=cover))
-#   
-#   return(dat)
-# }
-# 
-# 
-# # Clean taxa list (add these to end of above)
-# CleanTaxa_CH_Calanda2 <- function(community_CH_Calanda2) {
-#   taxa <- unique(community_CH_Calanda2$SpeciesName)
-#   return(taxa)
-# }
-# 
-# # Clean metadata
-# CleanMeta_CH_Calanda2 <- function(community_CH_Calanda2) {
-#   dat <- community_CH_Calanda2 %>%
-#     select(-SpeciesName, -Cover) %>%
-#     distinct() %>% 
-#     # only select control, local control, warm/down transplant
-#     mutate(Elevation = as.numeric(recode(destSiteID, 'Are'= '1000', 'Nes'='1400', 'Bar'='1600','Neu'='1800', 'Cal'='2000')),
-#            Gradient = "CH_Calanda2",
-#            Country = as.character("Switzerland"),
-#            YearEstablished = 2016, #double check this with Jacob
-#            PlotSize_m2 = 0.071) 
-#   
-#   return(dat)
-# }
-# 
-# 
-# #### IMPORT, CLEAN AND MAKE LIST #### 
-# ImportClean_CH_Calanda2 <- function(){
-#   
-#   ### IMPORT DATA
-#   community_CH_Calanda2_raw = ImportCommunity_CH_Calanda2()
-#   
-#   ### CLEAN DATA SETS
-#   cleaned_CH_Calanda2 = CleanCommunity_CH_Calanda2(community_CH_Calanda2_raw)
-#   community_CH_Calanda2 = cleaned_CH_Calanda2$comm
-#   cover_CH_Calanda2 = cleaned_CH_Calanda2$cover
-#   meta_CH_Calanda2 = CleanMeta_CH_Calanda2(community_CH_Calanda2) 
-#   taxa_CH_Calanda2 = CleanTaxa_CH_Calanda2(community_CH_Calanda2)
-#   
-#   
-#   # Make list
-#   CH_Calanda2 = list(meta = meta_CH_Calanda2,
-#                     community = community_CH_Calanda2,
-#                     cover = cover_CH_Calanda2,
-#                     taxa = taxa_CH_Calanda2)
-#   
-#   
-#   return(CH_Calanda2)
-# }
-# 
+#### CH_CALANDA2  ####
+#####################
+
+#### Import Community ####
+ImportCommunity_CH_Calanda <- function(){
+  
+  #load cover data and metadata
+  community_CH_Calanda_raw <- read.csv('./data/')
+  
+  return(community_CH_Calanda_raw)
+}
+
+#Remove alpine focals (is.focal column)
+#### Cleaning Code ####
+# Cleaning Calanda community data
+CleanCommunity_CH_Calanda <- function(community_CH_Calanda_raw) {
+  dat <- community_CH_Calanda_raw %>% 
+    mutate(Treatment = case_when(Treatment == "veg_away" & Site %in% c("Cal", "Nes") ~ "Warm", 
+                                 Treatment == "veg_home" & Site %in% c("Nes","Pea","Cal") ~ "LocalControl")) %>%
+    rename(destSiteID = Site, originSiteID = turf_type, Cover = Cov_Rel1, Year = year, SpeciesName = Species_Name, Collector = Botanist_Rel1, destPlotID = plot_id) %>% 
+    filter(!Cover=='\xa7', !Cover == "NF") %>% 
+    mutate(Cover = gsub(',|-', '.', Cover)) %>%
+    mutate(Cover=as.numeric(Cover)) %>%
+    filter(!is.na(Cover)) %>%
+    mutate(UniqueID = paste(Year, originSiteID, destSiteID, destPlotID, sep='_')) %>%
+    #add block ID 
+    rename(destBlockID=Block) %>% 
+    # only select control, local control, warm/down transplant
+    filter(Treatment %in% c("LocalControl", "Warm")) %>% 
+    mutate(UniqueID = paste(Year, originSiteID, destSiteID, destPlotID, sep='_'))  %>% 
+    mutate(destPlotID = as.character(destPlotID), destBlockID = if (exists('destBlockID', where = .)) as.character(destBlockID) else NA) %>%
+    filter(destPlotID != "CalNA.NA")
+  
+  dat2 <- dat %>%  
+    group_by_at(vars(-SpeciesName, -Cover)) %>%
+    summarise(SpeciesName = "Other", Cover = pmax((100 - sum(Cover)), 0)) %>%
+    bind_rows(dat) %>% 
+    mutate(Total_Cover = sum(Cover, na.rm=T), Rel_Cover = Cover / Total_Cover) %>%
+    ungroup()
+  
+  comm <- dat2 %>% filter(!SpeciesName %in% c('Other')) %>%
+    filter(Cover > 0)  
+  cover <- dat2 %>% filter(SpeciesName %in% c('Other')) %>% 
+    select(UniqueID, SpeciesName, Cover, Rel_Cover) %>% group_by(UniqueID, SpeciesName) %>% summarize(OtherCover=sum(Cover), Rel_OtherCover=sum(Rel_Cover)) %>%
+    rename(CoverClass=SpeciesName)
+  return(list(comm=comm, cover=cover))
+}
+
+
+# Clean taxa list (add these to end of above)
+CleanTaxa_CH_Calanda <- function(community_CH_Calanda) {
+  taxa <- unique(community_CH_Calanda$SpeciesName)
+  return(taxa)
+}
+
+# Clean metadata
+CleanMeta_CH_Calanda <- function(community_CH_Calanda) {
+  dat <- community_CH_Calanda %>% 
+    select(destSiteID, Year) %>%
+    group_by(destSiteID) %>%
+    summarize(YearMin = min(Year), YearMax = max(Year)) %>%
+    mutate(Elevation = as.numeric(recode(destSiteID, 'Pea'=2800, 'Cal'=2000, 'Nes'=1400)),
+           Gradient = "CH_Calanda",
+           Country = "Switzerland",
+           Longitude = as.numeric(recode(destSiteID, 'Pea'=9.47031, 'Cal'=9.48939, 'Nes'=9.49013)),
+           Latitude = as.numeric(recode(destSiteID, 'Pea'=46.89326, 'Cal'=46.88778, 'Nes'=46.86923)),
+           YearEstablished = 2012,
+           PlotSize_m2 = 0.75) %>%
+    mutate(YearRange = (YearMax-YearEstablished)) %>% 
+    select(Gradient, destSiteID, Longitude, Latitude, Elevation, YearEstablished, YearMin, YearMax, YearRange, PlotSize_m2, Country)
+  
+  return(dat)
+}
+
+#Clean trait data
+CleanTrait_CH_Calanda <- function(trait_CH_Calanda_raw){
+  trait <- trait_CH_Calanda_raw %>%
+    rename(SpeciesName = species, Individual_number = individual, destSiteID = site, Collector = collector, PlantID = unique.code) %>% #not including Year/date because clear issues in file
+    rename(Wet_Mass_g = leaf.fresh.weight, Dry_Mass_g = leaf.dry.weight, Leaf_Area_cm2 = leaf.area, Plant_Veg_Height_cm = height.veg.stretch, Plant_Rep_Height_cm = height.rep.stretch) %>%
+    select(destSiteID, SpeciesName,Individual_number, PlantID, Plant_Veg_Height_cm, Plant_Rep_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Area_cm2) %>%
+    mutate_all(~gsub(',','', .)) %>%
+    mutate(Country = "Switzerland",
+           destSiteID = recode(destSiteID, 'PEAK' = 'Pea', 'CAL' = 'Cal', 'NES' = 'Nes'),
+           Plant_Veg_Height_cm =   gsub("[^0-9.-]", "", Plant_Veg_Height_cm),
+           Plant_Veg_Height_cm = as.numeric(as.character(Plant_Veg_Height_cm)),
+           Plant_Rep_Height_cm =   gsub("[^0-9.-]", "", Plant_Rep_Height_cm),
+           Plant_Rep_Height_cm = as.numeric(as.character(Plant_Rep_Height_cm)),
+           Dry_Mass_g =   gsub("[^0-9.-]", "", Dry_Mass_g),
+           Dry_Mass_g = as.numeric(as.character(Dry_Mass_g)),
+           Wet_Mass_g =   gsub("[^0-9.-]", "", Wet_Mass_g),
+           Wet_Mass_g =   gsub("\\..", ".", Wet_Mass_g), #a .. present in data
+           Wet_Mass_g =   gsub("NA", NA, Wet_Mass_g),
+           Wet_Mass_g = as.numeric(as.character(Wet_Mass_g)),
+           Leaf_Area_cm2 =   gsub("[^0-9.-]", "", Leaf_Area_cm2),
+           Leaf_Area_cm2 =   gsub("0", "NA", Leaf_Area_cm2),
+           Leaf_Area_cm2 =   gsub("NA", NA, Leaf_Area_cm2),
+           Leaf_Area_cm2 = as.numeric(as.character(Leaf_Area_cm2)),
+           LDMC = ifelse(!is.na(Dry_Mass_g)&!is.na(Wet_Mass_g), Dry_Mass_g/Wet_Mass_g, NA),
+           SLA_cm2_g = ifelse(!is.na(Leaf_Area_cm2)&!is.na(Dry_Mass_g), Leaf_Area_cm2/Dry_Mass_g, NA)) %>%
+    dplyr::select(Country, destSiteID, SpeciesName, Individual_number, PlantID, Plant_Veg_Height_cm, Plant_Rep_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Area_cm2, SLA_cm2_g, LDMC) %>%
+    gather(key = Trait, value = Value, -Country, -destSiteID, -SpeciesName, -Individual_number, -PlantID) %>%
+    filter(!is.na(Value))
+  return(trait)
+}
+
+
+#### IMPORT, CLEAN AND MAKE LIST #### 
+ImportClean_CH_Calanda <- function(){
+  
+  ### IMPORT DATA
+  community_CH_Calanda_raw = ImportCommunity_CH_Calanda()
+  trait_CH_Calanda_raw = read_excel("./data/CH_Calanda/CH_Calanda_traitdata/funct_traits(101114)Excel.xlsx", sheet=1, na = "NA")
+  
+  ### CLEAN DATA SETS
+  cleaned_CH_Calanda = CleanCommunity_CH_Calanda(community_CH_Calanda_raw)
+  community_CH_Calanda = cleaned_CH_Calanda$comm
+  cover_CH_Calanda = cleaned_CH_Calanda$cover
+  meta_CH_Calanda = CleanMeta_CH_Calanda(community_CH_Calanda) 
+  taxa_CH_Calanda = CleanTaxa_CH_Calanda(community_CH_Calanda)
+  trait_CH_Calanda = CleanTrait_CH_Calanda(trait_CH_Calanda_raw)
+  
+  
+  # Make list
+  CH_Calanda = list(meta = meta_CH_Calanda,
+                    community = community_CH_Calanda,
+                    cover = cover_CH_Calanda,
+                    taxa = taxa_CH_Calanda,
+                    trait = trait_CH_Calanda)
+  
+  return(CH_Calanda)
+}
+
