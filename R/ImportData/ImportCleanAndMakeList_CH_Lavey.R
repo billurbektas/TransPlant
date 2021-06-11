@@ -21,7 +21,7 @@ CleanCommunity_CH_Lavey <- function(community_CH_Lavey_raw) {
     community_CH_Lavey_raw %>% 
     mutate(Treatment = recode(siteID, "CRE_CRE"= "LocalControl", "RIO_RIO"= "LocalControl", "MAR_MAR"= "LocalControl", "PRA_PRA"= "LocalControl", 
                               "CRE_RIO" = "Warm", "MAR_RIO" = "Warm", "PRA_RIO" = "Warm"),
-           Collector = ifelse(year %in% c(2017), 'Jean', 'Loic'),
+           #Collector = ifelse(year %in% c(2017), 'Jean', 'Loic'),
            cover = as.numeric(cover)) %>%
     separate(siteID, c('destSiteID', 'originSiteID'), sep='_') %>%
     rename(Cover = cover, Year = year, plotID = turfID  ) %>%         
@@ -31,7 +31,7 @@ CleanCommunity_CH_Lavey <- function(community_CH_Lavey_raw) {
            destPlotID = paste(originSiteID, destSiteID, plotID, sep='_')) %>%
     select(-plotID) %>% 
     mutate(destPlotID = as.character(destPlotID), destBlockID = if (exists('destBlockID', where = .)) as.character(destBlockID) else NA) %>%
-    group_by(UniqueID, Year, originSiteID, destSiteID, destPlotID, Treatment, Collector) %>%
+    group_by(UniqueID, Year, originSiteID, destSiteID, destPlotID, Treatment) %>%
     mutate(Total_Cover = sum(Cover), Rel_Cover = Cover / Total_Cover) 
   
   #Check relative cover sums to >=100

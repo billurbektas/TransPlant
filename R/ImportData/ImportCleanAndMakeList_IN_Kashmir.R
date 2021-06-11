@@ -26,13 +26,13 @@ CleanCommunity_IN_Kashmir <- function(community_IN_Kashmir_raw){
                                  Treatment =="high_turf" & destSiteID == "LOW" ~ "Warm" , 
                                  Treatment =="high_turf" & destSiteID == "HIGH" ~ "LocalControl")) %>% 
       mutate(Cover = recode(Cover, `1` = 0.5 , `2` = 1 , `3` = 3.5 , `4` = 8 , `5` = 15.5 , `6` = 25.5 , `7` = 35.5 , `8` = 45.5 , `9` = 55.5 , `10` = 70 , `11` = 90)) %>% 
-# Create new destplotID and UniqueID)     
+     # Create new destplotID and UniqueID)     
       mutate(destPlotID = paste(originSiteID, destSiteID, destBlockID, sep='_')) %>% 
       mutate(UniqueID = paste(destPlotID, Year, sep='_')) %>% 
       mutate(destPlotID = as.character(destPlotID), destBlockID = if (exists('destBlockID', where = .)) as.character(destBlockID) else NA)  %>%
       distinct() %>% #one duplicated row in original dataframe
-      group_by(Year, originSiteID, destSiteID, destBlockID, destPlotID, UniqueID, Treatment, Collector, SpeciesName) %>%
-      summarize(Cover = sum(Cover, na.rm=T)) %>% #had one species which occured twice in a plot, summing across
+      group_by(Year, originSiteID, destSiteID, destBlockID, destPlotID, UniqueID, Treatment, SpeciesName) %>%
+      summarize(Cover = sum(Cover, na.rm=T)) %>% #had one species which occurred twice in a plot, summing across
       ungroup()
 
     

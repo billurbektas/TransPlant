@@ -21,11 +21,10 @@ CleanCommunity_US_Montana <- function(community_US_Montana_raw){
     # DDE: renamed turfID to plotID and created unique destPlotID below.
     select(Gradient, Year, originSiteID, destSiteID, plotID, Treatment, SpeciesName, Cover) %>% 
     mutate(UniqueID = paste(Year, originSiteID, destSiteID, plotID, sep='_'), 
-           Collector ='Tim', Cover = as.numeric(Cover),
+           Cover = as.numeric(Cover),
            destPlotID = paste(originSiteID, destSiteID, plotID, sep='_')) %>% 
     select(-plotID) %>% 
-    mutate(destPlotID = as.character(destPlotID), destBlockID = if (exists('destBlockID', where = .)) as.character(destBlockID) else NA) %>%
-    distinct() 
+    mutate(destPlotID = as.character(destPlotID), destBlockID = if (exists('destBlockID', where = .)) as.character(destBlockID) else NA) 
   
   dat2 <- dat %>%  
     filter(!is.na(Cover)) %>%

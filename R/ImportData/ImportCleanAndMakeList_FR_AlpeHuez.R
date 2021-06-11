@@ -21,7 +21,7 @@ ImportCommunity_FR_AlpeHuez <- function(){
 CleanCommunity_FR_AlpeHuez <- function(community_FR_AlpeHuez_raw){
     dat <- community_FR_AlpeHuez_raw %>% 
     select(c(site:cover.class), -plot) %>% 
-    rename(SpeciesName = `species.name` , Cover = `cover.class` , destSiteID = site , destBlockID = block , plotID = plot.ID , Treatment = treatment , Date = date, Collector = collector)%>% 
+    rename(SpeciesName = `species.name` , Cover = `cover.class` , destSiteID = site , destBlockID = block , plotID = plot.ID , Treatment = treatment , Date = date)%>% 
      mutate(SpeciesName = sub("^(\\S*\\s+\\S+).*", "\\1", SpeciesName)) %>%     # This selects only the first two words in SpeciesName.
       filter(Treatment %in% c("HIGH_TURF", "LOW_TURF")) %>% 
       mutate(originSiteID = str_replace(Treatment, '(.*)_.*', "\\1"), 
@@ -37,7 +37,7 @@ CleanCommunity_FR_AlpeHuez <- function(community_FR_AlpeHuez_raw){
       mutate(destPlotID = paste(originSiteID, destSiteID, plotID, sep='_')) %>% 
       mutate(destPlotID = as.character(destPlotID), destBlockID = if (exists('destBlockID', where = .)) as.character(destBlockID) else NA) %>%
       distinct() %>% #duplicated row in original dataframe
-      group_by(Year, originSiteID, destSiteID, destBlockID, destPlotID, UniqueID, Treatment, Collector, SpeciesName) %>%
+      group_by(Year, originSiteID, destSiteID, destBlockID, destPlotID, UniqueID, Treatment, SpeciesName) %>%
       summarize(Cover = sum(Cover, na.rm=T)) %>% #had one species which occured twice in a plot, summing across
       ungroup()
     

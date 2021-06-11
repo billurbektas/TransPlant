@@ -37,7 +37,7 @@ ImportDrakePlan <- drake_plan(
   
   CH_Lavey = ImportClean_CH_Lavey(),
   CH_Calanda = ImportClean_CH_Calanda(),
-# CH_Calanda2 = ImportClean_CH_Calanda2(), 
+  CH_Calanda2 = ImportClean_CH_Calanda2(), 
 
   US_Colorado = ImportClean_US_Colorado(), 
   US_Montana = ImportClean_US_Montana(), 
@@ -64,7 +64,7 @@ ImportDrakePlan <- drake_plan(
 
 MergeDrakePlan <- drake_plan(
   dat = merge_comm_data(alldat = tibble::lst(NO_Ulvhaugen, NO_Lavisdalen, NO_Gudmedalen, NO_Skjellingahaugen, 
-    CH_Lavey, CH_Calanda, #CH_Calanda2,
+    CH_Lavey, CH_Calanda, CH_Calanda2,
     US_Colorado, US_Montana, US_Arizona,
     CN_Damxung, IN_Kashmir, CN_Gongga, CN_Heibei, 
     DE_Grainau, DE_Susalps, DE_TransAlps, FR_AlpeHuez, SE_Abisko, FR_Lautaret, IT_MatschMazia1, IT_MatschMazia2))

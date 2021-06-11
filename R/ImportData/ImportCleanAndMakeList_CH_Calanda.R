@@ -19,19 +19,16 @@ CleanCommunity_CH_Calanda <- function(community_CH_Calanda_raw) {
   dat <- community_CH_Calanda_raw %>% 
     mutate(Treatment = case_when(Treatment == "veg_away" & Site %in% c("Cal", "Nes") ~ "Warm", 
                                  Treatment == "veg_home" & Site %in% c("Nes","Pea","Cal") ~ "LocalControl")) %>%
-    rename(destSiteID = Site, originSiteID = turf_type, Cover = Cov_Rel1, Year = year, SpeciesName = Species_Name, Collector = Botanist_Rel1, destPlotID = plot_id) %>% 
-    filter(!Cover=='\xa7', !Cover == "NF") %>% 
-    mutate(Cover = gsub(',|-', '.', Cover)) %>%
-    mutate(Cover=as.numeric(Cover)) %>%
-    filter(!is.na(Cover)) %>%
-    mutate(UniqueID = paste(Year, originSiteID, destSiteID, destPlotID, sep='_')) %>%
+    rename(destSiteID = Site, originSiteID = turf_type, Year = year, SpeciesName = Species_Name, destPlotID = plot_id) %>% 
     #add block ID 
     rename(destBlockID=Block) %>% 
+    #add uniqueID
+    mutate(UniqueID = paste(Year, originSiteID, destSiteID, destPlotID, sep='_'))  %>% 
     # only select control, local control, warm/down transplant
     filter(Treatment %in% c("LocalControl", "Warm")) %>% 
-    mutate(UniqueID = paste(Year, originSiteID, destSiteID, destPlotID, sep='_'))  %>% 
     mutate(destPlotID = as.character(destPlotID), destBlockID = if (exists('destBlockID', where = .)) as.character(destBlockID) else NA) %>%
-    filter(destPlotID != "CalNA.NA")
+    filter(destPlotID != "CalNA.NA") %>%
+    select(Year, Treatment, originSiteID, destSiteID, destBlockID, destPlotID, UniqueID, SpeciesName, Cover)
   
   dat2 <- dat %>%  
     group_by_at(vars(-SpeciesName, -Cover)) %>%

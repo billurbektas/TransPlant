@@ -14,7 +14,7 @@ ImportCommunity_DE_Grainau <- function(){
 CleanCommunity_DE_Grainau <- function(community_DE_Grainau_raw){
     dat <- community_DE_Grainau_raw %>% 
     select(c(site:cover.class), -plot) %>% 
-      rename(SpeciesName = `species.name` , Cover = `cover.class` , destSiteID = site , destBlockID = block , destPlotID = plot.ID , Treatment = treatment , Year = year , Collector = collector)%>% 
+      rename(SpeciesName = `species.name` , Cover = `cover.class` , destSiteID = site , destBlockID = block , destPlotID = plot.ID , Treatment = treatment , Year = year )%>% 
       mutate(originSiteID = str_replace(Treatment, '(.*)_.*', "\\1"), 
              originSiteID = toupper(originSiteID),
              Treatment = case_when(Treatment =="low_turf" & destSiteID == "LOW" ~ "LocalControl" , 
@@ -24,7 +24,7 @@ CleanCommunity_DE_Grainau <- function(community_DE_Grainau_raw){
       mutate(UniqueID = paste(Year, originSiteID, destSiteID, destPlotID, sep='_'))  %>% 
       mutate(destPlotID = as.character(destPlotID), destBlockID = if (exists('destBlockID', where = .)) as.character(destBlockID) else NA) %>%
       distinct() %>% #one duplicated row in original dataframe
-      group_by(Year, originSiteID, destSiteID, destBlockID, destPlotID, UniqueID, Treatment, Collector, SpeciesName) %>%
+      group_by(Year, originSiteID, destSiteID, destBlockID, destPlotID, UniqueID, Treatment, SpeciesName) %>%
       summarize(Cover = sum(Cover, na.rm=T)) %>% #had one species which occured twice in a plot, summing across
       ungroup()
     

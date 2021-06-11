@@ -33,9 +33,8 @@ ImportTaxa_NO_Norway <- function(con){
 # Cleaning NO community data
 CleanCommunity_NO_Norway <- function(community_NO_Norway_raw){
   dat <- community_NO_Norway_raw %>% 
-    #left_join(taxa_NO_Norway, by = "species") %>% 
-    select(-temperature_level, -summerTemperature, -annualPrecipitation, -precipitation_level) %>% #, -notbad, -authority, -family, -comment) #%>% 
-    rename(originSiteID = siteID, originBlockID = blockID, Treatment = TTtreat, Cover = cover, SpeciesName = species, Year = year, Collector = recorder) %>% 
+    select(-temperature_level, -summerTemperature, -annualPrecipitation, -precipitation_level, -notbad, -authority, -family, -comment) %>% 
+    rename(originSiteID = siteID, originBlockID = blockID, Treatment = TTtreat, Cover = cover, SpeciesName = species, Year = year) %>% 
     mutate(destPlotID = paste(destBlockID, originBlockID, turfID, sep='_')) %>%
     # only select control, local control, warm/down transplant
     filter(Treatment %in% c("TTC", "TT2")) %>% 

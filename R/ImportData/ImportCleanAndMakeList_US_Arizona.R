@@ -32,10 +32,10 @@ CleanCommunity_US_Arizona <- function(community_US_Arizona_raw, cover_US_Arizona
     mutate(Treatment = recode (Treatment, "Warming" = "Warm",  "Control" = "LocalControl"))%>%
     gather('SpeciesName', 'Individuals', -Year, -Date, -originSiteID, -destSiteID, -Treatment,-destPlotID, -plotID) %>%
     #creating unique ID
-    mutate(UniqueID = paste(Year, originSiteID, destSiteID, plotID, sep='_'), Collector='Rubin') %>% # we can leave out the destSiteID here because it is embedded in destPlotID
+    mutate(UniqueID = paste(Year, originSiteID, destSiteID, plotID, sep='_')) %>% # we can leave out the destSiteID here because it is embedded in destPlotID
     select(-plotID) %>% 
     mutate(destBlockID = if (exists('destBlockID', where = .)) as.character(destBlockID) else NA) %>%
-    group_by(UniqueID, Year, originSiteID, destSiteID, destPlotID, destBlockID, Treatment, Collector) %>%
+    group_by(UniqueID, Year, originSiteID, destSiteID, destPlotID, destBlockID, Treatment) %>%
     mutate(Individuals = ifelse(is.na(Individuals), 0, Individuals)) %>%
     mutate(Total_Cover = sum(Individuals), Rel_Cover = Individuals / Total_Cover) 
   

@@ -29,9 +29,9 @@ CleanCommunity_IT_MatschMazia2 <- function(community_IT_MatschMazia2_raw){
                                    Treatment == 'Warm' ~ 'High')) %>% 
     select(Year, destSiteID, originSiteID, UniqueID, Treatment, SpeciesName, Cover, -treat) %>% 
     extract(UniqueID, into = c("destPlotID", "year"), "(.*)_([^_]+)$") %>% 
-  mutate(UniqueID = paste(originSiteID, destSiteID, destPlotID, sep='_')) %>%  
-    select(-year)
-  #  mutate(destPlotID = as.character(destPlotID), destBlockID = if (exists('destBlockID', where = .)) as.character(destBlockID) else NA)
+    mutate(UniqueID = paste(originSiteID, destSiteID, destPlotID, sep='_')) %>%  
+    select(-year) %>%
+    mutate(destPlotID = as.character(destPlotID), destBlockID = if (exists('destBlockID', where = .)) as.character(destBlockID) else NA)
   
   dat2 <- dat %>%  
     filter(!is.na(Cover)) %>%
