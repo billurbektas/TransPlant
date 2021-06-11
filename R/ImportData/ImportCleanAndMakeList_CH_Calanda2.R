@@ -2,7 +2,6 @@
 #### CH_CALANDA2  ####
 #####################
 
-
 source("R/ImportData/community_CH_Calanda2/load_comm_cal2.r")
 
 #### Import Community ####
@@ -24,15 +23,16 @@ CleanCommunity_CH_Calanda2 <- function(community_CH_Calanda2_raw) {
                                     plot %in% c(1,3) & site == "Nes" ~ 'Cal',
                                     plot %in% c(8,9) & site == "Nes" ~ 'Nes'),
            Treatment = case_when(plot %in% c(1,3) & site == "Nes" ~ "Warm", 
-                                 plot == c(8,9) & site == "Nes" ~ "LocalControl",
+                                 plot %in% c(8,9) & site == "Nes" ~ "LocalControl",
                                   site == "Cal" ~ "LocalControl")) %>%
-    rename(destSiteID = site, Cover = cover_cm2, Year = year, SpeciesName = species, destPlotID = plot_id, destBlockID = block) %>% 
+    select(-plot) %>%
+    rename(destSiteID = site, Cover = cover, Year = year, SpeciesName = species, destPlotID = plot_id, destBlockID = block) %>% 
     mutate(Cover=as.numeric(Cover)) %>%
     filter(!is.na(Cover)) %>%
     # only select control, local control, warm/down transplant
     mutate(UniqueID = paste(Year, originSiteID, destSiteID, destPlotID, sep='_'))  %>% 
     mutate(destPlotID = as.character(destPlotID), destBlockID = if (exists('destBlockID', where = .)) as.character(destBlockID) else NA) %>%
-    select(Year, originSiteID, destSiteID, Treatment, destBlockID, destPlotID, UniqueID, SpeciesName, Cover)
+    select(Year, originSiteID, destSiteID, Treatment, destBlockID, destPlotID, UniqueID, SpeciesName, Cover) 
   
   dat2 <- dat %>%  
     group_by(UniqueID) %>%

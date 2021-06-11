@@ -10,7 +10,8 @@ load_cover_CH_Calanda2 <- function(){
     select(year, site, block, plot, plot_id, quadrant_id, species, cover_cm2) %>%
     # group by plot and species to get summed cover
     group_by(year, site, block, plot, plot_id, species) %>%
-    summarize(cover = sum(cover_cm2))
+    summarize(cover = sum(cover_cm2)) %>%
+    ungroup()
     #keep in mind is_zombie denotes encroaching invaders
     
   return(cover)
