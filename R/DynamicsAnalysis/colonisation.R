@@ -485,37 +485,3 @@ dd %>% filter(!Region %in% c("FR_Lautaret", "IN_Kashmir", "US_Colorado")) %>%
 
 
 
-#### Extra code ####
-# ##Code with only points for plotting
-# dd %>%
-#   mutate(comm_sim = map(comm, ~.x %>% select(ODT, destPlotID) %>% distinct())) %>%
-#   mutate(dat = map2(turnover, comm_sim, ~left_join(.x, .y, by = "destPlotID"))) %>%
-#   unnest(dat) %>%
-#   ggplot(aes(x = Year, y = total, color = ODT)) + 
-#   geom_point() +
-#   scale_colour_manual(values = colour_odt) + 
-#   geom_smooth(method = "lm", se = FALSE) +
-#   facet_wrap(~ Region) +
-#   TP_theme() + 
-#   labs(title = 'Turnover over time', color = "Treatment Comparisons") 
-# 
-# ##Code for using intersect manually
-# dd <- dat %>% select(Region, originSiteID, destSiteID, Treatment) %>% 
-#   distinct() %>% 
-#   filter(Treatment == "Warm") %>% 
-#   select(-Treatment) %>% 
-#   mutate(comm = pmap(.l = list(R = Region, O = originSiteID, D = destSiteID), .f = function(R, O, D){
-#     bind_rows(
-#       originControls = dat %>% filter(Region == R, destSiteID == O, Treatment == "LocalControl"),
-#       destControls = dat %>% filter(Region == R, destSiteID == D, Treatment == "LocalControl"),
-#       warmed =  dat %>% filter(Region == R, destSiteID == D, Treatment == "Warm"),
-#       .id = "ODT") %>%
-#       arrange(Region, originSiteID, turfID, Year)
-#   })) %>% 
-#   mutate(ID = map(comm, function(x) x %>% group_by(ODT, destPlotID) %>% 
-#                     distinct(SpeciesName) %>% nest())) %>%
-#   unnest(ID) #%>%
-# group_by(Region, Year, ODT, destPlotID) %>%
-#   mutate(overlap = map(data, ~for (i in 1:length(.x)) {intersect(.x[i], .x[i+1])})) 
-# 
-# 

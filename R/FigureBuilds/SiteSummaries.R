@@ -7,8 +7,7 @@ Tb1 <- dat %>% group_by(Region) %>%
             nSpec = n_distinct(SpeciesName),
             nObs = n(),
             YearRange = max(Year)-min(Year),
-            ElevRange = max(Elevation)-min(Elevation),
-            mElevTrans = )
+            ElevRange = max(Elevation)-min(Elevation))
 
 View(Tb1)
 
@@ -23,4 +22,7 @@ meta <- alldat %>%
   ungroup() 
 
 
-meta %>% group_by(Region) %>% summarize(mElev = mean(dist(Elevation))) %>% View()
+meta %>% group_by(Region) %>% summarize(mElev = mean(dist(Elevation)), mPlot = mean(PlotSize_m2)) %>% View()
+
+View(meta)
+write.csv(meta, '~/Desktop/Subsite_summaries.csv')

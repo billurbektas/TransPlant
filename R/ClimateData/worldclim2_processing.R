@@ -67,6 +67,5 @@ dat2 <- dat %>% rowwise() %>%
   dplyr::select(Gradient, destSiteID, Latitude, Longitude, YearEstablished, YearMin, YearMax, YearRange, PlotSize_m2, Country, Elevation, Elevation_st = wc2.1_30s_elev, T_ann, T_sum, T_win, T_ann_cor, T_sum_cor, T_win_cor, V_ann, V_sum, V_win, P_ann, P_sum, P_win)
 
 # Issue with correcting temp for US_Arizona, actually overcorrects so that the T_ann_cor at low site is colder than high site. Use summer temperature instead!
-# for DE_Susalps, totally confused as to which is Bavaria and which is DE. Right now sites are EB, GW and FE
 
 write.csv(dat2, './climate/worlclim2_processedclimate.csv')

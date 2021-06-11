@@ -32,14 +32,19 @@ dd <- dat2 %>% select(Region, originSiteID, destSiteID, Treatment) %>%
 
 # Create lists of invading species per plot, merge invaders and community data
 invaders <- dd %>% select(Region, originSiteID, destSiteID, comm) %>%
-    mutate(low = map(comm, ~{.} %>% #species pool at low site controls across all years (could do only in first year)
+    mutate(low1 = map(comm, ~{.} %>%  filter(Year == min(Year)) %>% #species pool at low site controls in first year
                        select(ODT, SpeciesName) %>% 
                        filter(ODT == "destControls") %>%
                        distinct(.$SpeciesName) %>% 
                        flatten_chr(.)),
+           low = map(comm, ~{.} %>% #species pool at low site controls across all years
+                        select(ODT, SpeciesName) %>% 
+                        filter(ODT == "destControls") %>%
+                        distinct(.$SpeciesName) %>% 
+                        flatten_chr(.)),
            high = map(comm, ~{.} %>% #species pool of high site controls across all years
                         select(ODT, SpeciesName) %>% 
-                        filter(ODT =="origControls") %>%
+                        filter(ODT =="originControls") %>%
                         distinct(.$SpeciesName) %>% 
                         flatten_chr(.)),
            warmed = map(comm, ~{.} %>% #species pool of transplanted turfs across all years
@@ -47,20 +52,36 @@ invaders <- dd %>% select(Region, originSiteID, destSiteID, comm) %>%
                           filter(ODT =="warmed") %>%
                           distinct(.$SpeciesName) %>% 
                           flatten_chr(.)),
-           overlap = map(comm, ~{.} %>% filter(Year == min(Year)) %>% #overlap of species pool in transplanted turfs in year 1 in warmed vs. lowland species
-                        select(ODT, SpeciesName) %>% 
-                        filter(ODT %in% c("warmed", "destControls")) %>%
-                        group_map(~Reduce(intersect, split(.$SpeciesName, .$ODT))) %>%
-                        flatten_chr(.)),
+           warmed1 = map(comm, ~{.} %>% filter(Year == min(Year)) %>% #species pool of transplanted turfs in year 1 in warmed 
+                          select(ODT, SpeciesName) %>% 
+                          filter(ODT =="warmed") %>%
+                          distinct(.$SpeciesName) %>% 
+                          flatten_chr(.)),
+           # warmed_1 = map(comm, ~{.} %>% filter(Year == min(Year)) %>% 
+           #              select(ODT, SpeciesName) %>% 
+           #              filter(ODT %in% c("warmed", "destControls")) %>%
+           #              group_map(~Reduce(intersect, split(.$SpeciesName, .$ODT))) %>%
+           #              flatten_chr(.)),
+           overlap = map2(warmed1, low1, ~intersect(.x, .y)), #overlap of species pool in transplanted turfs in year 1 in warmed vs. lowland species
            high_unique = map2(high, low, ~setdiff(.x, intersect(.x,.y))), #only species in high species pool
-           resident = map2(high_unique, overlap, ~c(.x,.y)), #high species pool and overlap for transplanted turfs
+           resident = map2(high_unique, overlap, ~unique(c(.x,.y))), #high species pool and overlap for transplanted turfs
            invader = map2(warmed, resident, ~setdiff(.x, intersect(.x,.y)))) %>% #those species in low species pool that are not in the high or overlap pool
       mutate(comm_inv = map2(comm, invader, .f=function(.x, .y) { .x %>% 
             filter(ODT == "warmed") %>%
             mutate(Pool = ifelse(SpeciesName %in% unique(.y), "invader", "resident"))}))
 
 
-
+testH <- c("a", "b", "c") 
+testW1 <- c("b", "c")
+testW2 <- c("b", "e", "f")
+testL1 <- c("c", "d", "e")
+testL2 <- c("c", "d", "e", "f")
+testL <- unique(c(testL1, testL2))
+testW <- unique(c(testW1, testW2))
+overlap = intersect(testW1, testL1) #overlap
+high_unique = setdiff(testH, intersect(testH, testL)) #what is only in test1
+resident = unique(c(high_unique, overlap)) #all together
+invader = setdiff(testW, intersect(testW, resident))
 # Separate by group and look at colonisation or extinction per invaders or residents:
 # Right now it is relative turnover (total num species observed across two time points). I need proportion gained or lost relative to total for two groups (invaders and residents).
 test <- invaders %>% 
@@ -84,7 +105,7 @@ test <- invaders %>%
 #### Plot RA patterns ####
 #dest control, origin control, warmed
 colour_odt <- c("#A92420", "#016367", "#FBC00E")
-#colour_odt <- c("#A92420", "#016367")
+colour_odt <- c("#A92420", "#016367")
 
 RA <- test %>%
   select(Region, originSiteID, destSiteID, relabund, relabund_inv, relabund_res) %>%
@@ -92,17 +113,58 @@ RA <- test %>%
   unnest(dat) %>%
   mutate(type = recode(sp_pool, "1"="all", "2"="invader", "3"="resident"))
 
-RA %>%
+# Plot A
+pa <- RA %>%
+  group_by(Region) %>%
+  mutate(YearRange = (max(Year)-min(Year))) %>%
+  ungroup() %>%
+  filter(type !="all") %>%
+  arrange(YearRange) %>% 
+  mutate(Site = fct_reorder(Region, YearRange)) %>%
   ggplot(aes(x = Year, y = RA)) + 
   scale_colour_manual(values = colour_odt) + 
-  #geom_line(aes(group=destPlotID, color=type), alpha=0.2) +
   geom_point(aes(group=destPlotID, color=type), alpha=0.05) +
   geom_smooth(aes(group = type, color=type), method = "lm", se = F) +
-  facet_wrap(~Region, nrow=3) +
+  facet_wrap(~Site, nrow=3) +
   TP_theme() + 
-  scale_x_continuous(breaks=c(2010,2013,2016)) +
-  labs(color = "Treatment", y = 'Relative Abundance') +
-  labs(title = 'Relative abundance over time', color = "Treatment") 
+  scale_x_continuous(breaks=c(2012,2018)) +
+  labs(color = "Origin", y = 'Relative Abundance') 
+
+# Plot B
+
+pb <- RA %>% 
+  group_by(Region) %>%
+  mutate(YearRange = (max(Year)-min(Year))) %>%
+  filter(Year==max(Year)) %>%
+  ungroup() %>%
+  group_by(Region, type, YearRange) %>%
+  summarize(RA = mean(RA)) %>%
+  filter(type !="all") %>% 
+  ungroup() %>%
+  mutate(Site = fct_reorder(Region,desc(YearRange))) %>%
+  ggplot(aes(x=Site, y=RA, col = type)) +
+  geom_linerange(aes(x=Site, ymin=0, ymax=RA, col=type), position = position_dodge(width=0.6)) +
+  geom_point(size=4, position = position_dodge(width=0.6)) + 
+  coord_flip() +
+  ylim(0,1) +
+  xlab('Site') +
+  labs(color = "Origin") +
+  scale_colour_manual(values = colour_odt) + 
+  TP_theme()
+
+plot_grid(pa + theme(legend.position="none"), 
+          pb, 
+          align = "vh", nrow = 2, 
+          labels = c('A', 'B'))
+## Other graphs
+RA %>%
+  group_by(Region, originSiteID, destSiteID, destPlotID) %>%
+  filter(Year == min(Year)) %>%
+  filter(type != "all") %>%
+  ggplot(aes(x=RA, y=Region, fill=type)) + 
+  geom_bar(position="fill", stat="identity") + 
+  scale_fill_manual(values =c("darkred", "darkblue")) + 
+  TP_theme()
 
 RA %>%
   group_by(Region, originSiteID, destSiteID, destPlotID) %>%
@@ -129,6 +191,23 @@ RA %>%
   scale_x_continuous() + 
   TP_theme()
 
+RA %>% 
+  group_by(Region, originSiteID, destSiteID, destPlotID) %>%
+  filter(Year %in% range(Year)) %>%
+  mutate(Range = ifelse(Year==min(Year), "Ymin", "Ymax")) %>%
+  group_by(Region, Range, type) %>%
+  summarize(RA = mean(RA)) %>%
+  ungroup() %>%
+  filter(type !="all", Range =="Ymax") %>%
+  ggplot(aes(x=RA,y=Region, group=type, col=type)) + 
+  geom_lollipop(horizontal = TRUE,
+                #color="#a3c4dc", 
+                size=3,
+                position = position_dodge(width=0.1)) +
+  scale_x_continuous() + 
+  TP_theme()
+  
+  
 RA_m <- RA %>% mutate(Gradient = paste(originSiteID, destSiteID, sep="_")) %>%
   mutate(rela = 0.00001+(1-2*0.00001)*(RA-min(RA))/(max(RA)-min(RA)))  %>%
   mutate(Years = scale(Year)) %>% 
@@ -199,9 +278,9 @@ CO %>%
 CO %>% group_by(Region, originSiteID, destSiteID, destPlotID, type) %>%
   do(fitCO = tidy(lm(appearance ~ Year, data = .))) %>% 
   unnest(fitCO) %>%
-  filter(term=="Year") %>%
+  filter(term=="Year", type!="all") %>%
   group_by(Region, type) %>%
-  summarize(mid = mean(estimate), sd=sd(estimate, na.rm=T)) %>%
+  summarize(mid = mean(estimate, na.rm=T), sd=sd(estimate, na.rm=T)) %>%
   ggplot() + 
   scale_colour_manual(values = colour_odt) + 
   scale_size_manual(values = c(4,2,2)) +
@@ -216,10 +295,11 @@ CO %>% group_by(Region, originSiteID, destSiteID, destPlotID, type) %>%
 
 CO_m <- CO %>% mutate(Gradient = paste(originSiteID, destSiteID, sep="_")) %>%
   mutate(col = 0.00001+(1-2*0.00001)*(appearance-min(appearance))/(max(appearance)-min(appearance)))  %>%
-  mutate(Years = scale(Year))
+  mutate(Years = scale(Year)) %>%
+  filter(type != "all")
 
 mC = brm(
-  col ~ Years*type + (1|Region/Gradient), 
+  col ~ 0 + type + Years:type + (Years|Region/Gradient), 
   data = CO_m,
   family=Beta(link = "logit", link_phi = "log") # data scaled between 0 and 1
 )
@@ -263,10 +343,11 @@ EX %>% group_by(Region, originSiteID, destSiteID, destPlotID, type) %>%
 
 EX_m <- EX %>% mutate(Gradient = paste(originSiteID, destSiteID, sep="_")) %>%
   mutate(ext = 0.00001+(1-2*0.00001)*(disappearance-min(disappearance))/(max(disappearance)-min(disappearance)))  %>%
-  mutate(Years = scale(Year))
+  mutate(Years = scale(Year)) %>%
+  filter(type != "all")
 
 mE = brm(
-  ext ~  Years*type + (1|Region/Gradient), 
+  ext ~   0 + type + Years:type + (Years|Region/Gradient), 
   data = EX_m,
   family=Beta(link = "logit", link_phi = "log") # data scaled between 0 and 1
 )
@@ -310,15 +391,16 @@ TU %>% group_by(Region, originSiteID, destSiteID, destPlotID, type) %>%
 
 TU_m <- TU %>% mutate(Gradient = paste(originSiteID, destSiteID, sep="_")) %>%
   mutate(tur = 0.00001+(1-2*0.00001)*(total-min(total))/(max(total)-min(total)))  %>%
-  mutate(Years = scale(Year))
+  mutate(Years = scale(Year)) %>%
+  filter(type != "all")
 
 mT = brm(
-  tur ~ Years*type + (1|Region/Gradient), 
+  tur ~  0 + type + Years:type + (Years|Region/Gradient), 
   data = TU_m,
   family=Beta(link = "logit", link_phi = "log") # data scaled between 0 and 1
 )
 
-#### Plot colonisaiton patterns ordered by temperature ####
+#### Plot colonisation patterns ordered by temperature ####
 
 
 # Read in temperature and compute cumulative temp for ordering graph
