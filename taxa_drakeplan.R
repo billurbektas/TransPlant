@@ -1,5 +1,5 @@
 #############################
-### TRAIT DRAKE PLAN ########
+### TAXA DRAKE PLAN ########
 #############################
 #C. Chisholm, 13 April 2021
 # J. Lynn, 3 June 2021
@@ -28,7 +28,7 @@ ImportSiteTaxaDrakePlan <- drake_plan(
   # Import site community species columns
   sitetaxa = merge_site_taxa_data(sitedata = tibble::lst(NO_Ulvhaugen, NO_Lavisdalen, NO_Gudmedalen,
                                                          NO_Skjellingahaugen, 
-                                                         CH_Lavey, CH_Calanda, 
+                                                         CH_Lavey, CH_Calanda, CH_Calanda2,
                                                          US_Colorado, US_Montana, US_Arizona,
                                                          CN_Damxung, IN_Kashmir, CN_Gongga, CN_Heibei, 
                                                          DE_Grainau, DE_Susalps, DE_TransAlps, FR_AlpeHuez, SE_Abisko,
@@ -38,7 +38,7 @@ ImportSiteTaxaDrakePlan <- drake_plan(
   se_dat = load_SE_Abisko_sptable(),
   no_dat = load_Norway_sptable(),
   us_dat = load_US_Arizona_sptable(),
-  spcodes =  merge_sptable(spdat = tibble::lst(se_dat, no_dat, us_dat)), # has regions as a column but Norway is just "Norway"
+  spcodes =  merge_sptable(spdat = tibble::lst(se_dat, no_dat, us_dat)) # has regions as a column
   #spcodes_unlist = unnest(spcodes, cols = c(codes)),
   # Import taxa lists (list element $taxa) from all sites
   #taxa = get_species()
@@ -57,8 +57,7 @@ MergeTaxaDrakePlan <- drake_plan(
 CleanSpeciesNames <- drake_plan(
   
   cleanedspecies = resolve_species(mergedtaxa)
-  #cleanedspecies %>% filter(is.na(gni_uuid)) %>% View()
-  # the only issue remaining (that isn't Sweden and Norway) is Stellaria umbellata in CN_Heibei. It should be fine (gnr_resolve works on this species, why the NAs?)
+  
 )
 
 MyPlan <- bind_rows(ImportSiteTaxaDrakePlan, MergeTaxaDrakePlan, CleanSpeciesNames)
@@ -69,3 +68,7 @@ conf
 make(MyPlan)
 
 loadd(cleanedspecies)
+
+
+#cleanedspecies %>% filter(is.na(gni_uuid)) %>% View()
+# the only issue remaining (that isn't Sweden and Norway) is Stellaria umbellata in CN_Heibei. It should be fine (gnr_resolve works on this species, why the NAs?)

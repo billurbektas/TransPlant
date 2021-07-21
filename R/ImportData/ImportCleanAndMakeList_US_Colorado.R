@@ -40,8 +40,11 @@ CleanCommunity_US_Colorado <- function(community_US_Colorado_raw){
     filter(Cover > 0)
   cover <- dat2 %>% filter(SpeciesName %in% c('Other', 'Bare Soil', 'Bare soil', 'bare soil', 'Litter', 'LItter', 'litter', 'rock', 'Rock', 'moss')) %>%
     mutate(SpeciesName=recode(SpeciesName, "Bare Soil"='Bareground', "Bare soil"='Bareground', "bare soil"='Bareground', 'LItter'='Litter', 'litter'='Litter', 'moss'= 'Moss', 'rock'='Rock')) %>%
-    select(UniqueID, SpeciesName, Cover, Rel_Cover) %>% group_by(UniqueID, SpeciesName) %>% summarize(OtherCover=sum(Cover), Rel_OtherCover=sum(Rel_Cover)) %>%
+    select(Year, destSiteID, destPlotID, SpeciesName, Cover, Rel_Cover) %>% 
+    group_by(Year, destSiteID, destPlotID, SpeciesName) %>% 
+    summarize(OtherCover=sum(Cover), Rel_OtherCover=sum(Rel_Cover)) %>%
     rename(CoverClass=SpeciesName)
+  
   return(list(comm=comm, cover=cover))
     
   return(dat)
@@ -74,16 +77,21 @@ CleanMeta_US_Colorado <- function(community_US_Colorado){
 
 #Clean trait data
 CleanTrait_US_Colorado <- function(trait_US_Colorado_raw){
-  trait <- trait_US_Colorado_raw %>%
+  trait_plot <- trait_US_Colorado_raw %>%
     rename(destPlotID = turfID, SpeciesName = species, Individual_number = individual) %>%
     rename(Wet_Mass_g = "wetMassg", Dry_Mass_g = "dryMassg", Leaf_Area_cm2 = "leafAreacm2", Plant_Veg_Height_cm = "leafHeight_cm",
            SLA_cm2_g = "SLA",  Leaf_Thickness_Ave_mm = "thicknessAvgorSingle") %>%
     mutate(Country = "USA") %>%
-    dplyr::select(Country, destPlotID, SpeciesName, Individual_number, Wet_Mass_g, Dry_Mass_g, Leaf_Area_cm2, SLA_cm2_g, LDMC, Leaf_Thickness_Ave_mm, Plant_Veg_Height_cm) %>%
-    gather(key = Trait, value = Value, -Country, -destPlotID, -SpeciesName, -Individual_number) %>%
+    select(Country, destPlotID, SpeciesName, Individual_number, Wet_Mass_g, Dry_Mass_g, Leaf_Area_cm2, SLA_cm2_g, LDMC, Leaf_Thickness_Ave_mm, Plant_Veg_Height_cm) %>%
+    mutate(Plant_Veg_Height_cm = as.numeric(Plant_Veg_Height_cm)) %>%
+    pivot_longer(names_to = "Trait", values_to = "Value", cols = c(Wet_Mass_g, Dry_Mass_g, Leaf_Area_cm2, SLA_cm2_g, LDMC, Leaf_Thickness_Ave_mm, Plant_Veg_Height_cm)) %>%
     mutate(Individual_number = as.character(Individual_number), Value = as.numeric(Value)) %>%
     filter(!is.na(Value))
-  return(trait)
+  
+  trait_site <- trait_plot %>%
+    mutate(destSiteID = substr(destPlotID, 1, 2)) %>%
+    select(Country, destSiteID, destPlotID, SpeciesName, Individual_number, Trait, Value) 
+  return(trait_site)
 }
 
 #### IMPORT, CLEAN AND MAKE LIST #### 

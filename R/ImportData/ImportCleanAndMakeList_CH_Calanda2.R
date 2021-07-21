@@ -39,9 +39,9 @@ CleanCommunity_CH_Calanda2 <- function(community_CH_Calanda2_raw) {
     mutate(Total_Cover = sum(Cover, na.rm=T), Rel_Cover = Cover / Total_Cover) %>%
     ungroup()
   
-  comm <- dat2 %>% filter(!SpeciesName %in% c('Moss Group', 'Lychen Group', 'Mushroom Group')) %>%
+  comm <- dat2 %>% filter(!SpeciesName %in% c('Moss Group', 'Lychen Group', 'Mushroom Group', 'Cetraria islandica')) %>%
     filter(Cover > 0)  
-  cover <- dat2 %>% filter(SpeciesName %in% c('Moss Group', 'Lychen Group', 'Mushroom Group')) %>% 
+  cover <- dat2 %>% filter(SpeciesName %in% c('Moss Group', 'Lychen Group', 'Mushroom Group', 'Cetraria islandica')) %>% 
     select(UniqueID, SpeciesName, Cover, Rel_Cover) %>% group_by(UniqueID, SpeciesName) %>% summarize(OtherCover=sum(Cover), Rel_OtherCover=sum(Rel_Cover)) %>%
     rename(CoverClass=SpeciesName)
   return(list(comm=comm, cover=cover))

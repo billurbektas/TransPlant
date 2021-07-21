@@ -7,24 +7,24 @@ library(taxize)
 
 ### FUNCTION TO IMPORT SPECIES -------------------------------------------------
 
-get_species <- function(){
-  # load drake environment
-  loadd()
-  alldat = tibble::lst(NO_Ulvhaugen, NO_Lavisdalen, NO_Gudmedalen, NO_Skjellingahaugen, 
-                                 CH_Lavey, CH_Calanda, 
-                                 US_Colorado, US_Montana, US_Arizona,
-                                 CN_Damxung, IN_Kashmir, CN_Gongga, CN_Heibei, 
-                                 DE_Grainau, DE_Susalps, DE_TransAlps, FR_AlpeHuez, SE_Abisko, FR_Lautaret, IT_MatschMazia1, IT_MatschMazia2)
-  # map all taxa to one unique vector
-  taxa <- alldat %>% 
-    map(~.$taxa) %>%
-    do.call(c, .) %>%
-    unique
-  # remove missing cases
-  taxa <- taxa[!is.na(taxa)]
-  # return
-  return(taxa)
-}
+# get_species <- function(){
+#   # load drake environment
+#   loadd()
+#   alldat = tibble::lst(NO_Ulvhaugen, NO_Lavisdalen, NO_Gudmedalen, NO_Skjellingahaugen, 
+#                                  CH_Lavey, CH_Calanda, CH_Calanda2,
+#                                  US_Colorado, US_Montana, US_Arizona,
+#                                  CN_Damxung, IN_Kashmir, CN_Gongga, CN_Heibei, 
+#                                  DE_Grainau, DE_Susalps, DE_TransAlps, FR_AlpeHuez, SE_Abisko, FR_Lautaret, IT_MatschMazia1, IT_MatschMazia2)
+#   # map all taxa to one unique vector
+#   taxa <- alldat %>% 
+#     map(~.$taxa) %>%
+#     do.call(c, .) %>%
+#     unique
+#   # remove missing cases
+#   taxa <- taxa[!is.na(taxa)]
+#   # return
+#   return(taxa)
+# }
 
 
 ### FUNCTION TO CLEAN SPECIES NAMES WITH TNRS + GNR ----------------------------
@@ -33,6 +33,7 @@ resolve_species <- function(taxa){
   # copy taxa into modified version for database calling
   copy_taxa <- taxa$original_name
   # resolve easy fixes
+  copy_taxa[copy_taxa == "Stellaria umbellata"] <- "Stellaria umbellata"
   copy_taxa[copy_taxa == "Stellaria_wide_leaf"] <- "Stellaria umbellata"
   copy_taxa[copy_taxa == "Entire Meconopsis"] <- "Meconopsis"
   copy_taxa[copy_taxa == "Leuc. Vulg."] <- "Leucanthemum vulgare"
@@ -54,6 +55,8 @@ resolve_species <- function(taxa){
   copy_taxa[copy_taxa == "Carex biggelowii"] <- "Carex bigelowii" 
   copy_taxa[copy_taxa == "Carex spec"] <- "Carex"
   copy_taxa[copy_taxa == "Potentilla stenophylla"] <- "Potentilla stenophylla"
+  copy_taxa[copy_taxa == "Hol.lan"] <- "Holcus lanatus"
+  copy_taxa[copy_taxa == "Dia.med"] <- "Dianthus deltoides"
 
   
   # call GNR
@@ -69,6 +72,7 @@ resolve_species <- function(taxa){
     rename(matched_name = matched_name2)
   # construct data frame from taxa input, make character, bind GNR output
   taxa_tab <- data.frame(Region = taxa$Region,
+                         destSiteID = taxa$destSiteID,
                          SpeciesName = taxa$SpeciesName, 
                          original_name = taxa$original_name,
                          submitted_name = copy_taxa) %>%
@@ -79,7 +83,18 @@ resolve_species <- function(taxa){
   taxa_out <- taxa_tab %>% filter(is.na(gni_uuid)) %>% group_by(Region) %>% 
     mutate(submitted_name = ifelse(is.na(gni_uuid), paste(Region, "NID", seq_len(nrow(.)), sep="_"), submitted_name),
            matched_name = ifelse(is.na(gni_uuid), paste(Region, "NID", seq_len(nrow(.)), sep="_"), matched_name)) %>%
-    bind_rows(., taxa_tab) %>% filter(!is.na(matched_name))
+    bind_rows(taxa_tab, .) %>% filter(!is.na(submitted_name))
+  
+  # fix odd stelumb issue for CN_Heibei (maybe a character issue in text?)
+  taxa_out[taxa_out$submitted_name == "CN_Heibei_NID_1",]$gni_uuid <- "b8f58fe9-1a3b-5e54-bfd6-4d160f930b5e"
+  taxa_out[taxa_out$submitted_name == "CN_Heibei_NID_1",]$score <- 0.988
+  taxa_out[taxa_out$submitted_name == "CN_Heibei_NID_1",]$submitted_name <- "Stellaria umbellata"
+  taxa_out[taxa_out$submitted_name == "CN_Heibei_NID_4",]$gni_uuid <- "b8f58fe9-1a3b-5e54-bfd6-4d160f930b5e"
+  taxa_out[taxa_out$submitted_name == "CN_Heibei_NID_4",]$score <- 0.988
+  taxa_out[taxa_out$submitted_name == "CN_Heibei_NID_4",]$submitted_name <- "Stellaria umbellata"
+  taxa_out[taxa_out$submitted_name == "CN_Heibei_NID_6",]$gni_uuid <- "b8f58fe9-1a3b-5e54-bfd6-4d160f930b5e"
+  taxa_out[taxa_out$submitted_name == "CN_Heibei_NID_6",]$score <- 0.988
+  taxa_out[taxa_out$submitted_name == "CN_Heibei_NID_6",]$submitted_name <- "Stellaria umbellata"
   
   # return
   return(taxa_out)
@@ -94,11 +109,8 @@ merge_site_taxa_data <- function(sitedata) {
   sitedata_taxa <- sitedata %>% 
     map_df("community", .id='Region') %>%
     ungroup() %>%
-    select(Region, SpeciesName) %>%
+    select(Region, destSiteID, SpeciesName) %>%
     unique() 
-    
-  sitedata_taxa$Region <- if_else(sitedata_taxa$Region %in% c("NO_Gudmedalen", "NO_Lavisdalen",  "NO_Skjellingahaugen",
-                          "NO_Ulvhaugen"), "Norway", sitedata_taxa$Region)
   
   return(sitedata_taxa) 
   

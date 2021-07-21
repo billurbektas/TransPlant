@@ -29,19 +29,16 @@ pn <- . %>% print(n = Inf)
 
 
 # Source downstream trait scripts
-source("R/clean_taxonomy.R")
-source("R/Name_repair.R") #for sp_codes for No, US and Sweden where they use species codes in dat
+#source("taxa_drakeplan.R")
+drake::loadd(cleanedspecies)
+
 source("R/try_traits.R")
 source("R/merge_traits.R")
 
 # Import TRY Data
 ImportTRYDrakePlan <- drake_plan(
 
-taxa = get_species(),
-
-cleaned = resolve_species(taxa),
-
-trytraits = load_wrangle_try(cleaned)
+trytraits = load_wrangle_try(cleaned=cleanedspecies)
 
 )
 
@@ -55,7 +52,7 @@ ImportSiteTraitDrakePlan <- drake_plan(
 # Merge all trait data
 
  MergeTraitDrakePlan <- drake_plan(
-   alltraits = merge_trait_data(traits = tibble::lst(trytraits, sitetraits, dat))
+   alltraits = merge_trait_data(traits = tibble::lst(trytraits, sitetraits))
 )
 
 # CleanTraitDrakePlan <- drake_plan(

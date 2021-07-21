@@ -12,16 +12,16 @@ load_wrangle_try <- function(cleaned) {
   ## LOAD TRY ##
   # specify directory, load try, give names
   try_dir <- paste0(getwd(), "/data/Traits/")
-  try_data <- lapply(list.files(try_dir, full.names = T), fread)
+  try_data <- lapply(list.files(try_dir, full.names = T), read.csv)
   names(try_data) <- c("categorical", "numeric", "species")
   
   ## MATCH ROWS IN CLEANED SPECIES TO POSITIONS IN TRY SPECIES LIST ##
   # hierarchical matching: ID > accepted_name > submitted_name > original_name
   match_ids_ids <- match(cleaned$gni_uuid, try_data$species$gni_uuid)
-  match_acc_acc <- match(cleaned$matched_name2, try_data$species$accepted_name)
+  match_acc_acc <- match(cleaned$matched_name, try_data$species$accepted_name)
   match_sub_acc <- match(cleaned$submitted_name, try_data$species$accepted_name)
   match_ori_acc <- match(cleaned$original_name, try_data$species$accepted_name)
-  match_acc_sub <- match(cleaned$matched_name2, try_data$species$submitted_name)
+  match_acc_sub <- match(cleaned$matched_name, try_data$species$submitted_name)
   match_sub_sub <- match(cleaned$submitted_name, try_data$species$submitted_name)
   match_ori_sub <- match(cleaned$original_name, try_data$species$submitted_name)
   # create hierarchy, then add in iterative forms with ifelse statements
@@ -37,7 +37,7 @@ load_wrangle_try <- function(cleaned) {
     mutate(consensus = ifelse(is.na(consensus), match_sub_sub, consensus)) %>%
     mutate(consensus = ifelse(is.na(consensus), match_ori_sub, consensus))
   # create genus variables and match
-  my_genus_acc <- str_split_fixed(cleaned$matched_name2, 
+  my_genus_acc <- str_split_fixed(cleaned$matched_name, 
                                   n = 2, 
                                   pattern = " ")[, 1]
   my_genus_sub <- str_split_fixed(cleaned$submitted_name, 
@@ -63,9 +63,9 @@ load_wrangle_try <- function(cleaned) {
   
   ## SUBSET TRY DATA TO CLEANED SPECIES LIST ##
   # skeleton species list
-  try_spp <- try_spp_gen <- cleaned %>% select(original_name, 
+  try_spp <- try_spp_gen <- cleaned %>% select(Region, destSiteID, original_name, 
                                                submitted_name, 
-                                               accepted_name = matched_name2)
+                                               accepted_name = matched_name)
   # subset try names
   try_names <- try_data$species %>% select(try_name = accepted_name, 
                                            genus:order)
@@ -85,17 +85,6 @@ load_wrangle_try <- function(cleaned) {
   return(out)
 }
 
-
-### CONVENIENCE FUNCTION -------------------------------------------------------
-
-clean_species <- function(){
-  # load and clean species
-  taxa <- get_species()
-  cleaned <- resolve_species(taxa)
-  try_data <- load_wrangle_try(cleaned)
-  # return data
-  return(try_data)
-}
 
 
 

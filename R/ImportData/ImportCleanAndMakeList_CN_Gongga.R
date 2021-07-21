@@ -105,11 +105,10 @@ CleanTrait_CN_Gongga <- function(dat){
     mutate(Treatment = plyr::mapvalues(Project, c("C", "0", "LOCAL"), c("C", "O", "Gradient"))) %>%
     mutate(Taxon = trimws(Taxon)) %>%
     mutate(Year = year(Date),
-           Country = "China",
-           Gradient = as.character(1)) %>%
+           Country = "China") %>%
     rename(BlockID = Location, SpeciesName = Taxon, destSiteID = Site) %>%
-    dplyr::select(Country, Year, destSiteID, Gradient, SpeciesName, Wet_Mass_g, Dry_Mass_g, Leaf_Thickness_Ave_mm, Leaf_Area_cm2, SLA_cm2_g, LDMC, C_percent, N_percent , CN_ratio, dN15_percent, dC13_percent, P_AVG, P_Std_Dev, P_Co_Var) %>%
-    gather(key = Trait, value = Value, -Country, -Year, -destSiteID, -Gradient, -SpeciesName) %>%
+    dplyr::select(Country, Year, destSiteID, SpeciesName, Wet_Mass_g, Dry_Mass_g, Leaf_Thickness_Ave_mm, Leaf_Area_cm2, SLA_cm2_g, LDMC, C_percent, N_percent , CN_ratio, dN15_percent, dC13_percent, P_AVG, P_Std_Dev, P_Co_Var) %>%
+    gather(key = Trait, value = Value, -Country, -Year, -destSiteID, -SpeciesName) %>%
     filter(!is.na(Value))
   return(dat2)
 }

@@ -77,7 +77,8 @@ load_US_Arizona_sptable <- function() {
 
 ##Function to merge all
 merge_sptable <- function(spdat) {
-  sp_codes <- bind_rows(list("SE_Abisko" = spdat$se_dat, "Norway" = spdat$no_dat, "US_Arizona" = spdat$us_dat), .id="Region") %>%
+  sp_codes <- bind_rows(list("SE_Abisko" = spdat$se_dat, "NO_Ulvhaugen"=spdat$no_dat, "NO_Lavisdalen"=spdat$no_dat, "NO_Gudmedalen"=spdat$no_dat,
+                             "NO_Skjellingahaugen"=spdat$no_dat, "US_Arizona" = spdat$us_dat), .id="Region") %>%
     filter(!taxa %in% c(NA, "NA NA")) 
   
   return(sp_codes)

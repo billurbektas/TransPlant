@@ -79,7 +79,7 @@ CleanMeta_IT_MatschMazia2 <- function(community_IT_MatschMazia2){
 CleanTrait_IT_MatschMazia2 <- function(trait_IT_MatschMazia2_raw){
   trait <- trait_IT_MatschMazia2_raw %>%
     rename(Elevation = elevation, SpeciesName = Species, Individual_number = `Rep-ID`) %>%
-    filter(Elevation != 989.80) %>%
+    filter(Elevation != "989.8") %>%
     rename(Wet_Mass_g = "Fresh weight, 1 leaf [g]", Dry_Mass_g = "Dry weight, 1 leaf [mg]", Leaf_Area_cm2 = "Leaf area [cm2], 1 leaf", Plant_Veg_Height_cm = "VegHt [cm]", Plant_Rep_Height_cm = "RepHt [cm]",
            LDMC = "LDMC [mg g-1]", SLA_mm2_mg = "SLA [mm2 mg-1]",  C_percent = "Carbon [%]", N_percent = "Nitrogen [%]", N_conc_mg_g = "LNC [mg g-1]", C_conc_mg_g = "LCC [mg g-1]"  ) %>%
     mutate_all(~gsub(',','', .)) %>%

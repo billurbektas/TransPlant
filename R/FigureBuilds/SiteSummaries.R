@@ -13,7 +13,7 @@ View(Tb1)
 
 # For lat and lon information (supp Site table with lat/lon)
 alldat <- tibble::lst(NO_Ulvhaugen, NO_Lavisdalen, NO_Gudmedalen, NO_Skjellingahaugen, 
-                      CH_Lavey, CH_Calanda, 
+                      CH_Lavey, CH_Calanda, CH_Calanda2,
                       US_Colorado, US_Montana, US_Arizona,
                       CN_Damxung, IN_Kashmir, CN_Gongga, CN_Heibei, 
                       DE_Grainau, DE_Susalps, DE_TransAlps, FR_AlpeHuez, SE_Abisko, FR_Lautaret, IT_MatschMazia1, IT_MatschMazia2)
