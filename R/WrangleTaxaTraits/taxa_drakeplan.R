@@ -19,8 +19,8 @@ pn <- . %>% print(n = Inf)
 
 
 # Source downstream trait scripts
-source("R/clean_taxonomy.R") # for cleaning species lists from 'taxa' list element for all sites
-source("R/site_taxa_codes.R") #for sp_codes for No, Arizona and Sweden where they use species codes in dat
+source("R/WrangleTaxaTraits/clean_taxonomy.R") # for cleaning species lists from 'taxa' list element for all sites
+source("R/WrangleTaxaTraits/site_taxa_codes.R") #for sp_codes for No, Arizona and Sweden where they use species codes in dat
 
 # Import names from community dataframe
 ImportSiteTaxaDrakePlan <- drake_plan(
@@ -60,15 +60,17 @@ CleanSpeciesNames <- drake_plan(
   
 )
 
-MyPlan <- bind_rows(ImportSiteTaxaDrakePlan, MergeTaxaDrakePlan, CleanSpeciesNames)
+TaxaPlan <- bind_rows(ImportSiteTaxaDrakePlan, MergeTaxaDrakePlan, CleanSpeciesNames)
 
-conf <- drake_config(MyPlan)
+conf <- drake_config(TaxaPlan)
 conf
-
-make(MyPlan)
-
-loadd(cleanedspecies)
+# 
+# make(MyPlan)
+# 
+# loadd(cleanedspecies)
 
 
 #cleanedspecies %>% filter(is.na(gni_uuid)) %>% View()
 # the only issue remaining (that isn't Sweden and Norway) is Stellaria umbellata in CN_Heibei. It should be fine (gnr_resolve works on this species, why the NAs?)
+#Stellaria umbellata fixed
+#However, for some reason the gnr call adds some rows to the dataset (goes from 4527 to 4599). Where is this duplication coming from?

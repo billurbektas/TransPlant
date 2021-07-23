@@ -26,6 +26,35 @@ library(taxize)
 #   return(taxa)
 # }
 
+### MERGE TAXA LIST FROM SITE ABUNDANCE DATA AND LOOKUP TABLES ---------------------
+merge_site_taxa_data <- function(sitedata) {
+  
+  
+  #merge taxa data from abundances
+  sitedata_taxa <- sitedata %>% 
+    map_df("community", .id='Region') %>%
+    ungroup() %>%
+    select(Region, destSiteID, SpeciesName) %>%
+    unique() 
+  
+  return(sitedata_taxa) 
+  
+}
+
+merge_all_taxa_data <- function(alldat) {
+  
+  #merge site data and species codes used for those three sites
+  site_code <- left_join(alldat$sitetaxa, alldat$spcodes, by=c("Region", "SpeciesName"="code")) %>% #sitetaxa is 4481, site_code is 4527 (check what is being added)
+    mutate(original_name = ifelse(!is.na(taxa), taxa, SpeciesName))
+  
+  setdiff(c(alldat$sitetaxa$SpeciesName), c(site_code$SpeciesName))# both are zero?
+  
+  #site_code %>% filter(is.na(original_name) & is.na(SpeciesName)) #only 3 NAs in Species Name (from Heibei, this is a known issue)
+  
+  return(site_code) 
+  
+}
+
 
 ### FUNCTION TO CLEAN SPECIES NAMES WITH TNRS + GNR ----------------------------
 
@@ -57,25 +86,28 @@ resolve_species <- function(taxa){
   copy_taxa[copy_taxa == "Potentilla stenophylla"] <- "Potentilla stenophylla"
   copy_taxa[copy_taxa == "Hol.lan"] <- "Holcus lanatus"
   copy_taxa[copy_taxa == "Dia.med"] <- "Dianthus deltoides"
-
   
-  # call GNR
-  taxa_gnr <- gnr_resolve(names = copy_taxa, 
+  taxa$copy_taxa <- copy_taxa
+  
+  # call GNR (does not deal with duplicated data!)
+  taxa_gnr <- gnr_resolve(names = unique(copy_taxa), 
                           best_match_only = T, 
                           data_source_ids = c(1, 12),
                           fields = "all",
                           with_context = T,
                           with_canonical_ranks = T)
+  
   # subset for supplied name, unique ID, match score and matched name
   gnr_subset <- taxa_gnr %>% 
     select(user_supplied_name, gni_uuid, score, matched_name2) %>%
     rename(matched_name = matched_name2)
+  
   # construct data frame from taxa input, make character, bind GNR output
   taxa_tab <- data.frame(Region = taxa$Region,
                          destSiteID = taxa$destSiteID,
                          SpeciesName = taxa$SpeciesName, 
                          original_name = taxa$original_name,
-                         submitted_name = copy_taxa) %>%
+                         submitted_name = taxa$copy_taxa) %>%
     mutate(submitted_name = as.character(submitted_name)) %>%
     left_join(., gnr_subset, by = c("submitted_name" = "user_supplied_name"))
   
@@ -96,42 +128,10 @@ resolve_species <- function(taxa){
   taxa_out[taxa_out$submitted_name == "CN_Heibei_NID_6",]$score <- 0.988
   taxa_out[taxa_out$submitted_name == "CN_Heibei_NID_6",]$submitted_name <- "Stellaria umbellata"
   
+  #grepping for 'NID' shows all correctly IDed :)
+  
   # return
   return(taxa_out)
 }
 
-
-### MERGE TAXA LIST FROM SITE ABUNDANCE DATA AND LOOKUP TABLES ---------------------
-merge_site_taxa_data <- function(sitedata) {
-  
-  
-  #merge taxa data from abundances
-  sitedata_taxa <- sitedata %>% 
-    map_df("community", .id='Region') %>%
-    ungroup() %>%
-    select(Region, destSiteID, SpeciesName) %>%
-    unique() 
-  
-  return(sitedata_taxa) 
-  
-}
-
-merge_all_taxa_data <- function(alldat) {
-  
-  #merge site data and species codes used for those three sites
-  site_code <- left_join(alldat$sitetaxa, alldat$spcodes, by=c("Region", "SpeciesName"="code")) %>% #sitetaxa is 2246, cleancode is 2257 (check what is being added)
-    mutate(original_name = ifelse(!is.na(taxa), taxa, SpeciesName))
-
- # setdiff(c(clean_code$original_name), c(cleaned$original_name))# both are zero?
- # clean_code$original_name[!(clean_code$original_name %in% cleaned$original_name)]
- # rar <-  unique(clean_code$original_name) #1264, so duplicates being added
- # rar <-  unique(cleaned$original_name) #1264 as well, so definitely 4 duplicates (but means that codes are site-specific)
-  
-  #merge all site data to cleaned names dataframe
-  #species <-left_join(site_code, alldat$species, by=c("original_name")) #%>% #is 2266 (so another set being added?)
-    
-  
-  return(site_code) 
-  
-}
 

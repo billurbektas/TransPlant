@@ -29,11 +29,9 @@ pn <- . %>% print(n = Inf)
 
 
 # Source downstream trait scripts
-#source("taxa_drakeplan.R")
-drake::loadd(cleanedspecies)
-
-source("R/try_traits.R")
-source("R/merge_traits.R")
+source("R/WrangleTaxaTraits/taxa_drakeplan.R") #for TaxaPlan (which cleans species names)
+source("R/WrangleTaxaTraits/try_traits.R") #for try traits
+source("R/WrangleTaxaTraits/merge_traits.R") #to merge site and try traits
 
 # Import TRY Data
 ImportTRYDrakePlan <- drake_plan(
@@ -45,7 +43,7 @@ trytraits = load_wrangle_try(cleaned=cleanedspecies)
 # Merge field-collected trait data
 
 ImportSiteTraitDrakePlan <- drake_plan(
-  sitetraits = merge_site_trait_data(sitedata = tibble::lst(NO_Ulvhaugen, NO_Lavisdalen, NO_Gudmedalen, NO_Skjellingahaugen, 
+  sitetraits = merge_site_trait_data(sitetraitdata = tibble::lst(NO_Ulvhaugen, NO_Lavisdalen, NO_Gudmedalen, NO_Skjellingahaugen, 
                                              CH_Calanda, US_Colorado, CN_Gongga, FR_AlpeHuez, FR_Lautaret, IT_MatschMazia1, IT_MatschMazia2))
 )
 
@@ -55,25 +53,26 @@ ImportSiteTraitDrakePlan <- drake_plan(
    alltraits = merge_trait_data(traits = tibble::lst(trytraits, sitetraits))
 )
 
+ #Now there has been more rows added again! 5292 instead of 4599.
 # CleanTraitDrakePlan <- drake_plan(
 #   
 #   #add cleaning script here, see error risk from tundra trait team as an example
 # )
 
-MyPlan <- bind_rows(ImportTRYDrakePlan, ImportSiteTraitDrakePlan, MergeTraitDrakePlan)
+TraitPlan <- bind_rows(TaxaPlan, ImportTRYDrakePlan, ImportSiteTraitDrakePlan, MergeTraitDrakePlan)
 
-conf <- drake_config(MyPlan)
+conf <- drake_config(TraitPlan)
 conf
 
-make(MyPlan)
-
+make(TraitPlan)
+# 
 loadd(alltraits)
 
 # Check all is good
 #drake_failed()
 
 # View dependency graph
-#vis_drake_graph(MyPlan)
+vis_drake_graph(TraitPlan)
 
 #Checked names! Everything w/o replacement ok
 # Pulsatilla vernalis
