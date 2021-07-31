@@ -13,7 +13,7 @@ library("RSQLite")
 library("visNetwork")
 
 # Source drakeplan
-r_make(source = "TransPlant_DrakePlan.R")
+r_make(source = "R/TransPlant_DrakePlan.R")
 
 # Load data 
 # site data available as CO_Site (Country_Site, ex. CH_Lavey is Switzerland, Lavey)

@@ -6,7 +6,7 @@
 # Source ggplot theme
 source('./R/theme_ggplot.R')
 
-dat <- alltraits %>% select(Country, Region, Year, originSiteID, destSiteID, Treatment, destPlotID, SpeciesName, species, Rel_Cover, Plant_Veg_Height_cm, Leaf_Area_cm2, SLA_cm2_g, C_percent, N_percent, P_percent, Seed_Mass, Stem_density) %>%
+traitdat <- alltraits %>% select(Region, destSiteID, SpeciesName, Plant_Veg_Height_cm, Leaf_Area_cm2, SLA_cm2_g, C_percent, N_percent, P_percent, Seed_Mass, Stem_density) %>%
   rename(plant_height = Plant_Veg_Height_cm, leaf_area = Leaf_Area_cm2, SLA = SLA_cm2_g , leaf_C = C_percent , leaf_N = N_percent, leaf_P = P_percent, seed_mass = Seed_Mass, SD = Stem_density)
 
 # Create ODT treatment and nest data

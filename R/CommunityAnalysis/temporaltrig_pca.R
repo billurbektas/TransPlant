@@ -218,19 +218,25 @@ dd_plot %>%
 
 #order by Temp (black to red) and P_warm (black to blue) <- VPD doesn't vary much
 #dd_clim_ave$SiteID <- dd_clim_ave$Gradient
+
+dd_site$YearRange[2] <- 4
 dd_site$SiteID <- dd_site$Region
 TS <- dd_site$T_swarm_cums
+TS[2] <- TS[1]
 TSA <- dd_site$T_swarms
+TSA[2] <- TSA[1]
 PR <- dd_site$P_warm_cums
+PR[2] <- PR[1]
 PRA <- dd_site$P_warms
+PRA[2] <- PRA[1]
 
 TS <- (TS-min(TS)) / (max(TS)-min(TS))
 TSA <- (TSA-min(TSA)) / (max(TSA)-min(TSA))
 PR <- (PR-min(PR)) / (max(PR)-min(PR))
 PRA <- (PRA-min(PRA)) / (max(PRA)-min(PRA))
 
-TScol <- rgb(TS, 0, 1-TS) #R, G, B colors, between 0 to 1
-TSAcol <- rgb(TSA, 0, 1-TSA)
+TScol <- rgb(TS*0.9, TS/2, 1-TS*0.9) #R, G, B colors, between 0 to 1
+TSAcol <- rgb(TSA, 0.3, 1-TSA)
 PRcol <- rgb(0, 0, PR) 
 PRAcol <- rgb(0, 0, PRA) 
 
@@ -240,22 +246,22 @@ names(PRcol) <- as.character(dd_site$SiteID)
 names(PRAcol) <- as.character(dd_site$SiteID)
 
 # add in site names
-# #order by T_warm_cum
-# dd_Temp_ave <- dd_Temp_ave %>% arrange(T_warm_cum)
-# dd_Temp_ave$SiteID <- c('COL', 'SWE', 'MON', 'ARI', 'FRA1', 'SWI1', 'NOR1', 'FRA2', 'GER1', 'CHI1', 'CHI2', 'IND', 'CHI3', 'NOR2', 'SWI2', 'NOR3', 'NOR4', 'GER2', 'ITA')
-# colfunc <- colorRampPalette(c("blue4", "#6A38B3", "#FE433C"))
-# cols <- colfunc(19)
-# cols <- data.frame(SiteID=dd_Temp_ave$SiteID, cols=cols)
+#order by T_warm_cum
+dd_site2 <- dd_site %>% arrange(T_warm_cum)
+#dd_site2$SiteID <- c('COL', 'SWE', 'MON', 'ARI', 'FRA1', 'SWI1', 'NOR1', 'FRA2', 'GER1', 'CHI1', 'CHI2', 'IND', 'CHI3', 'NOR2', 'SWI2', 'NOR3', 'NOR4', 'GER2', 'ITA')
+colfunc <- colorRampPalette(c("#DEB18B", "#AB2330"))
+cols <- colfunc(22)
+cols <- data.frame(SiteID=dd_site2$SiteID, cols=cols)
 
 
 #### For change in summer temp (dest-origin) 
 p1 <-  dd_site %>% arrange(T_swarm_cums) %>%    
   mutate(SiteID=factor(SiteID, levels=SiteID)) %>%
-  ggplot(aes(x = PCA1_fn1, y = PCA2_fn1, group=SiteID, color = SiteID)) +
-  geom_point(alpha = 3, size=5) +    
-  geom_errorbar(aes(xmin=PCA1_fn1-PCA1_fn2, xmax=PCA1_fn1+PCA1_fn2), width=.01, alpha=0.5) +
-  geom_errorbar(aes(ymin=PCA2_fn1-PCA2_fn2, ymax=PCA2_fn1+PCA2_fn2), width=.01, alpha=0.5) +
-  scale_colour_manual(values=TScol) +
+  ggplot(aes(x = PCA1_fn1, y = PCA2_fn1, group=SiteID, fill = SiteID)) +
+  geom_errorbar(aes(xmin=PCA1_fn1-PCA1_fn2, xmax=PCA1_fn1+PCA1_fn2), width=.01, alpha=1, col=cols$cols) +
+  geom_errorbar(aes(ymin=PCA2_fn1-PCA2_fn2, ymax=PCA2_fn1+PCA2_fn2), width=.01, alpha=1, col=cols$cols) +
+  geom_point(alpha = 1, size=5, colour="black",pch=21) + 
+  scale_fill_manual(values=cols$cols) +
   TP_theme() +
   xlim(0,1) +
   ylim(0,1) +
@@ -267,10 +273,10 @@ p1 <-  dd_site %>% arrange(T_swarm_cums) %>%
 
 p2 <-  dd_site %>% arrange(T_swarm_cums) %>%
   mutate(SiteID=factor(SiteID, levels=SiteID)) %>%
-  ggplot(aes(x = SiteID, y=PCA2_fn1, color = SiteID)) +
-  geom_point(alpha = 3, size=3) +
-  geom_errorbar(aes(ymin=PCA2_fn1-PCA2_fn2, ymax=PCA2_fn1+PCA2_fn2), width=.01) +
-  scale_colour_manual(values=TScol) +
+  ggplot(aes(x = SiteID, y=PCA2_fn1, fill = SiteID)) +
+  geom_errorbar(aes(ymin=PCA2_fn1-PCA2_fn2, ymax=PCA2_fn1+PCA2_fn2), width=.01, alpha=1, col=cols$cols) +
+  geom_point(alpha = 1, size=5, colour="black",pch=21) + 
+  scale_colour_manual(values=cols$cols) +
   TP_theme() +
   ylim(0,1) +
   labs(
@@ -313,10 +319,10 @@ plot_grid(p1 + theme(legend.position="none"),
 ## Add in temperature or SR or distance between groups correlations
 p2 <-  dd_site %>% arrange(T_swarm_cums) %>%
   mutate(SiteID=factor(SiteID, levels=SiteID)) %>%
-  ggplot(aes(x = BCs_fn1, y=PCA2_fn1, color = SiteID)) +
-  geom_point(alpha = 3, size=3) +
-  geom_errorbar(aes(ymin=PCA2_fn1-PCA2_fn2, ymax=PCA2_fn1+PCA2_fn2), width=.01) +
-  scale_colour_manual(values=TScol) +
+  ggplot(aes(x = BCs_fn1, y=PCA1_fn1, fill = SiteID)) +
+  geom_errorbar(aes(ymin=PCA1_fn1-PCA1_fn2, ymax=PCA1_fn1+PCA1_fn2), width=.01, alpha=1, col=cols$cols) +
+  geom_point(alpha = 1, size=5, colour="black",pch=21) +
+  scale_fill_manual(values=cols$cols) +
   TP_theme() +
   #ylim(0,1) +
   labs(
@@ -326,16 +332,30 @@ p2 <-  dd_site %>% arrange(T_swarm_cums) %>%
 
 p3 <- dd_site %>% arrange(T_swarm_cums) %>%
   mutate(SiteID=factor(SiteID, levels=SiteID)) %>%
-  ggplot(aes(x = SRs_fn1, y=PCA1_fn1, color = SiteID)) +
-  geom_point(alpha = 3, size=3) +
-  geom_errorbar(aes(ymin=PCA1_fn1-PCA1_fn2, ymax=PCA1_fn1+PCA1_fn2), width=.01) +
-  scale_colour_manual(values=TScol) +
+  ggplot(aes(x = T_swarms, y=PCA1_fn1, fill = SiteID)) +
+  geom_errorbar(aes(ymin=PCA1_fn1-PCA1_fn2, ymax=PCA1_fn1+PCA1_fn2), width=.01, alpha=1, col=cols$cols) +
+  geom_point(alpha = 1, size=5, colour="black",pch=21) + 
+  scale_fill_manual(values=cols$cols) +
   TP_theme() +
   #ylim(0,1) +
   labs(
-    x = "Species Richness",
+    x = "Average Temperature (degC)",
     y = "Distance from origin to destination"
   )
+
+p4 <- dd_site %>% mutate(SiteID=factor(SiteID, levels=SiteID)) %>%
+  ggplot(aes(x = YearRange, y=PCA1_fn1, fill = SiteID)) +
+  geom_smooth(aes(x=YearRange, y=PCA1_fn1)) + 
+  geom_errorbar(aes(ymin=PCA1_fn1-PCA1_fn2, ymax=PCA1_fn1+PCA1_fn2), width=.01, alpha=1, col=cols$cols) +
+  geom_point(alpha = 1, size=5, colour="black",pch=21) + 
+  scale_fill_manual(values=cols$cols) +
+  TP_theme() +
+  #ylim(0,1) +
+  labs(
+    x = "Time (years)",
+    y = "Distance from origin to destination"
+  )
+
 
 plot_grid(p1 + theme(legend.position="none"), 
           legend,
@@ -406,39 +426,35 @@ summary(m7)
 #### BRMS MODEL PCA1 ~ ALL CLIMATE DATA
 # for gaussian use: PCA1_fn1|resp_se(PCA1_fn2, sigma = TRUE)
 
+dd_site[2,14:19] <- dd_site[1,14:19]
+
+dd_site[2,21:29] <- dd_site[1,21:29]
+
 m1 = brm(
-  PCA1_fn1|mi(PCA1_fn2) ~ PlotSize_m2s_fn1 + YearRange_fn1 + (1|Region:Gradient), # plot size and year range no effect
+  PCA1_fn1|mi(PCA1_fn2) ~ PlotSize_m2s + YearRanges, # plot size and year range no effect
   data = dd_site,
-  iter = 10000,
-  cores=3, 
-  chains=3,
-  control = list(adapt_delta=0.99, max_treedepth = 20), 
+  #iter = 10000,
+  #cores=3, 
+  #chains=3,
+  #control = list(adapt_delta=0.99, max_treedepth = 20), 
   family=Beta(link = "logit", link_phi = "log") 
 )
 
 m2 = brm(
-  PCA1_fn1|mi(PCA1_fn2) ~ YearRanges_fn1 + T_warms_fn1 + P_warms_fn1 + (1|Gradient), # none significant
+  PCA1_fn1|mi(PCA1_fn2) ~ YearRanges + T_warms + P_warms, # none significant
   data = dd_site,
-  iter = 10000,
-  control = list(adapt_delta=0.99, max_treedepth = 20), 
   family=Beta(link = "logit", link_phi = "log") 
 )
 
 m3 = brm(
-  PCA1_fn1|mi(PCA1_fn2) ~ T_warm_cums_fn1 + P_warm_cums_fn1 + (1|Gradient), # t-warm sig, but negative !?
+  PCA1_fn1|mi(PCA1_fn2) ~ T_warm_cums + P_warm_cums, # t-warm sig, but negative !?
   data = dd_site,
-  iter = 10000,
-  control = list(adapt_delta=0.99, max_treedepth = 20), 
   family=Beta(link = "logit", link_phi = "log") 
 )
 
 m4 = brm(
-  PCA1_fn1|mi(PCA1_fn2) ~  T_warm_fn1 + P_warm_fn1 + T_warm_cum_fn1 + P_warm_cum_fn1 + (1|Gradient), # use 0+ if unscaled
+  PCA1_fn1|mi(PCA1_fn2) ~  T_warm + P_warm + T_warm_cum + P_warm_cum, # use 0+ if unscaled
   data = dd_site,
-  iter = 10000,
-  cores=3, 
-  chains=3,
-  control = list(adapt_delta=0.99, max_treedepth = 20), 
   family=Beta(link = "logit", link_phi = "log") 
 )
 
@@ -454,29 +470,110 @@ m5 = brm(
 m6 = brm(
   PCA1_fn1|mi(PCA1_fn2) ~  SRs_fn1 + BCs_fn1 + PlotSize_m2s + T_swarms + P_warms + T_swarm_cums + P_warm_cums, # no interaction of plotsize, but negative tcum
   data = dd_site,
-  #iter=8000,
-  #control = list(adapt_delta=0.99, max_treedepth = 15), 
   family=Beta(link = "logit", link_phi = "log") 
 )
 
-summary(m6)
+m6 = brm(
+  PCA1_fn1|mi(PCA1_fn2) ~  T_swarms, # BCs_fn1 positive, Tswarms negative
+  data = dd_site,
+  family=Beta(link = "logit", link_phi = "log") 
+)
 
-# Plotting posterior predictions over range of new values
+summary(m6) # BC +, Tswarms neg, Tswarm_cum
 
-newdf <- dd_clim_ave %>%
-  distinct(T_warm_cums_fn1, PCA1_fn2) %>%
+# Plotting for SNF report
+
+mT = brm(
+  PCA1_fn1|mi(PCA1_fn2) ~  T_swarms, # BCs_fn1 positive, Tswarms negative
+  data = dd_site,
+  family=Beta(link = "logit", link_phi = "log") 
+)
+
+newdf <- dd_site %>%
+  distinct(PCA1_fn2, T_swarms) %>%
   mutate(Region = "fake")  %>%
-  add_fitted_draws(m5, allow_new_levels = TRUE)
+  add_fitted_draws(mT, allow_new_levels = TRUE) %>%
+  mutate(SiteID = "fake")
 
-ggplot(newdf) +
-  aes(x = T_warm_cums_fn1, y = .value) +
-  stat_lineribbon(
-    .width = c(.25, .5, .75, .95)
-  ) +
-  geom_point(data=dd_clim_ave, aes(x=T_warm_cums_fn1, y = PCA1_fn1)) +
-  scale_color_viridis_d(aesthetics = "fill") +
-  guides(fill = FALSE) +
-  theme_grey(base_size = 14) +
-  TP_theme()
+pT <- dd_site %>% arrange(T_swarm_cums) %>%
+  mutate(SiteID=factor(SiteID, levels=SiteID)) %>%
+  ggplot(aes(x = T_swarms, y=PCA1_fn1, col = SiteID)) +
+  stat_lineribbon(data=newdf, aes(x=T_swarms, y=.value), fill= "#DEB18B", col = "#541F12", alpha=0.8, .width = c(.95)) +
+  geom_errorbar(aes(ymin=PCA1_fn1-PCA1_fn2, ymax=PCA1_fn1+PCA1_fn2), width=.01, alpha=1, col=cols$cols) +
+  geom_point(alpha = 1, size=5, col=cols$cols) + 
+  TP_theme() +
+  #ylim(0,1) +
+  labs(
+    x = expression("Average Regional Temperature " ( degree*C)),
+    y = ""
+  )
 
+
+mB = brm(
+  PCA1_fn1|mi(PCA1_fn2) ~ BCs_fn1, # BCs_fn1 positive, Tswarms negative
+  data = dd_site,
+  family=Beta(link = "logit", link_phi = "log") 
+)
+
+newdf <- dd_site %>%
+  distinct(PCA1_fn2, BCs_fn1) %>%
+  mutate(Region = "fake")  %>%
+  add_fitted_draws(mB, allow_new_levels = TRUE) %>%
+  mutate(SiteID = "fake")
+
+pB <-  dd_site %>% arrange(T_swarm_cums) %>%
+  mutate(SiteID=factor(SiteID, levels=SiteID)) %>%
+  ggplot(aes(x = BCs_fn1, y=PCA1_fn1, fill = SiteID)) +
+  stat_lineribbon(data=newdf, aes(x=BCs_fn1, y=.value), fill= "#DEB18B", col = "#541F12", alpha=0.8, .width = c(.95)) +
+  geom_errorbar(aes(ymin=PCA1_fn1-PCA1_fn2, ymax=PCA1_fn1+PCA1_fn2), width=.01, alpha=1, col=cols$cols) +
+  geom_point(alpha = 1, size=5, col=cols$cols) + 
+  TP_theme() +
+  #ylim(0,1) +
+  labs(
+    x = "Initial dissimilarity between high-low controls",
+    y = ""
+  )
+
+
+mY = brm(
+  PCA1_fn1|mi(PCA1_fn2) ~ YearRanges, # BCs_fn1 positive, Tswarms negative
+  data = dd_site,
+  family=Beta(link = "logit", link_phi = "log") 
+)
+
+newdf <- dd_site %>%
+  distinct(PCA1_fn2, YearRanges) %>%
+  mutate(Region = "fake")  %>%
+  add_fitted_draws(mY, allow_new_levels = TRUE) %>%
+  mutate(SiteID = "fake")
+
+pY <- dd_site %>% mutate(SiteID=factor(SiteID, levels=SiteID)) %>%
+  ggplot(aes(x = YearRanges, y=PCA1_fn1, fill = SiteID)) +
+  #stat_lineribbon(data=newdf, aes(x=YearRanges, y=.value), fill= "#DEB18B", col = "#541F12", alpha=0.8, .width = c(.95)) +
+  geom_errorbar(aes(ymin=PCA1_fn1-PCA1_fn2, ymax=PCA1_fn1+PCA1_fn2), width=.01, alpha=1, col=cols$cols) +
+  geom_point(alpha = 1, size=5, col=cols$cols) + 
+  TP_theme() +
+  #ylim(0,1) +
+  labs(
+    x = "Time (years)",
+    y = "Transplanted community composition convergence"
+  )
+
+prow <- plot_grid(pY + theme(legend.position="none"), 
+          pT + theme(legend.position="none"), 
+          pB +  theme(legend.position="none"),
+          #legend,
+          align = "vh", nrow = 1,
+          hjust = -1,
+          #rel_heights = c(1/2, 1/2, 1/2),
+          #rel_widths = c(1/2, 1/2, 1/2),
+          labels = c('A', 'B', 'C'))
+
+legend_b <- get_legend(pB + theme(legend.position="bottom"))
+
+# add the legend underneath the row we made earlier. Give it 10% of the height
+# of one plot (via rel_heights).
+p <- plot_grid( prow, legend_b, ncol = 1, rel_heights = c(1, .2))
+p
+prow
   

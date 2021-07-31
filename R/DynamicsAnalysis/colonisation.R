@@ -99,6 +99,16 @@ CO %>%
   scale_x_continuous(breaks=c(2010,2013,2016)) + 
   labs(title = 'Colonisation over time', color = "Treatment") 
 
+CO %>%
+  ggplot(aes(x = Year, y = appearance)) + 
+  scale_colour_manual(values = colour_odt) + 
+  #geom_point(aes(group=destPlotID, color=ODT), alpha=0.1) +
+  geom_smooth(aes(group = ODT, color=ODT), method = "lm", se = F) +
+  facet_wrap(~Region, nrow=2) +
+  TP_theme() + 
+  scale_x_continuous(breaks=c(2010,2013,2016)) + 
+  labs(title = 'Colonisation over time', color = "Treatment") 
+
 CO_m <- CO %>% 
   mutate(Gradient = paste(originSiteID, destSiteID, sep="_")) %>%
   mutate(col = 0.00001+(1-2*0.00001)*(appearance-min(appearance))/(max(appearance)-min(appearance)))  %>%
@@ -170,6 +180,17 @@ TU %>%
   geom_point(aes(group=destPlotID, color=ODT), alpha=0.1) +
   geom_smooth(aes(group = ODT, color=ODT), method = "lm", se = F) +
   facet_wrap(~Region, nrow=2) +
+  TP_theme() + 
+  scale_x_continuous(breaks=c(2010,2013,2016)) + 
+  labs(title = 'Turnover over time', color = "Treatment") 
+
+TU %>%
+  ggplot(aes(x = Year, y = total)) + 
+  scale_colour_manual(values = colour_odt) + 
+  geom_line(aes(group=destPlotID, color=ODT), alpha=0.2) +
+  geom_smooth(aes(group = ODT, color=ODT), method = "lm", se = F) +
+  #geom_smooth(aes(color=darkgrey), method = "lm", se = F) +
+  #facet_wrap(~Region, nrow=2) +
   TP_theme() + 
   scale_x_continuous(breaks=c(2010,2013,2016)) + 
   labs(title = 'Turnover over time', color = "Treatment") 
@@ -431,7 +452,7 @@ dd %>%
 
 ## Compare distributions of change in these three
 
-dd %>%
+Fig <- dd %>%
   mutate(comm_sim = map(comm, ~.x %>% mutate(Year_diff=max(Year - min(Year))) %>%
                           select(Elevation, Year_diff, ODT, destPlotID) %>% 
                           distinct())) %>% 
@@ -448,11 +469,16 @@ dd %>%
   mutate(model = map(data, ~lm(value ~ Year, data = .x))) %>% 
   mutate(tidied = map(model, tidy)) %>% 
   unnest(tidied) %>%
-  filter(term == 'Year') %>%
-  ggplot(aes(x=estimate, color=comdyn)) + 
-  geom_density() + 
+  filter(term == 'Year') 
+
+Fig %>%
+  ggplot(aes(x=estimate, fill=comdyn)) + 
+  geom_density(alpha=0.6) + 
   scale_colour_manual(values = colour_comdyn) +
   TP_theme() + 
+  scale_fill_manual(values=colour_comdyn) +
+  geom_vline(xintercept = 0) +
+  facet_grid(~comdyn, nrows=3) +
   labs(y="Number of sites", x=expression(Delta*Slope)) +
   labs(color="Process") 
 

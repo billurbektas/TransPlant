@@ -23,7 +23,7 @@ p <- ggplot() + coord_fixed() +
 
 #Add map to base plot
 base_world_messy <- p + geom_polygon(data=world_map, aes(x=long, y=lat, group=group), 
-                                    colour="white", fill="#cdcdcd") +
+                                    colour="white", fill="#dddddd") +
                           scale_y_continuous(breaks = (-2:2) * 30) +
                           scale_x_continuous(breaks = (-4:4) * 45) +
                           coord_map("ortho",ylim=c(25,180), orientation=c(61, 0, 0))
@@ -44,10 +44,10 @@ base_world <- base_world_messy + cleanup
 map_data <- base_world +
   geom_point(data=metadat, 
              aes(x=as.numeric(long), y=as.numeric(lat), fill=Yearrange, size=Elevrange), 
-             pch=21, alpha=I(0.7)) + 
+             pch=21, alpha=I(0.9)) + 
   theme(legend.position="bottom", 
         legend.text.align = 0) + # omit plot title saying 'color'
-  scale_fill_distiller(palette ="OrRd", direction = 1) +
+  scale_fill_distiller(palette ="Greys", direction = 1) +
   labs(size="Max Transplant Downslope (m)", fill="Year Since Established") +
   ggtitle('TransPlant Network Sites') 
 
@@ -55,8 +55,9 @@ map_data
 
 # Zooming into map for Europe
 library(sf)
-zoom_to <- c(13.38, 52.52)  # Berlin
-zoom_level <- 3
+#zoom_to <- c(13.38, 52.52)  # Berlin
+zoom_to <- c(8.8, 46.3)  # Ticino
+zoom_level <- 5
 lon_span <- 360 / 2^zoom_level
 lat_span <- 180 / 2^zoom_level
 
@@ -66,12 +67,34 @@ lat_bounds <- c(zoom_to[2] - lat_span / 2, zoom_to[2] + lat_span / 2)
 base_world +
   geom_point(data=metadat, 
              aes(x=as.numeric(long), y=as.numeric(lat), fill=Yearrange, size=Elevrange), 
-             pch=21, alpha=I(0.7)) + 
+             pch=21, alpha=I(0.9)) + 
   theme(legend.position="bottom", 
         legend.text.align = 0) + # omit plot title saying 'color'
-  scale_fill_distiller(palette ="OrRd", direction = 1)  +
-  geom_sf(data = st_sfc(st_point(zoom_to), crs = 4326),
-          color = 'red') +
+  scale_fill_distiller(palette ="Greys", direction = 1)  +
+  #geom_sf(data = st_sfc(st_point(zoom_to), crs = 4326),
+  #        color = 'red') +
+  coord_sf(xlim = lon_bounds, ylim = lat_bounds) 
+
+# Zooming into map for Norway
+library(sf)
+#zoom_to <- c(13.38, 52.52)  # Berlin
+zoom_to <- c(6.2, 60.8)  # Ticino
+zoom_level <- 5
+lon_span <- 360 / 2^zoom_level
+lat_span <- 180 / 2^zoom_level
+
+lon_bounds <- c(zoom_to[1] - lon_span / 2, zoom_to[1] + lon_span / 2)
+lat_bounds <- c(zoom_to[2] - lat_span / 2, zoom_to[2] + lat_span / 2)
+
+base_world +
+  geom_point(data=metadat, 
+             aes(x=as.numeric(long), y=as.numeric(lat), fill=Yearrange, size=Elevrange), 
+             pch=21, alpha=I(0.9)) + 
+  theme(legend.position="bottom", 
+        legend.text.align = 0) + # omit plot title saying 'color'
+  scale_fill_distiller(palette ="Greys", direction = 1)  +
+  #geom_sf(data = st_sfc(st_point(zoom_to), crs = 4326),
+  #        color = 'red') +
   coord_sf(xlim = lon_bounds, ylim = lat_bounds) 
 
 

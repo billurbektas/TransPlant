@@ -1,4 +1,5 @@
 library(codyn)
+library(cowplot)
 library(broom)
 library(ggalt)
 library(brms)
@@ -206,6 +207,17 @@ RA %>%
                 position = position_dodge(width=0.1)) +
   scale_x_continuous() + 
   TP_theme()
+
+RA %>% filter(!Region %in% c("CH_Calanda", "CH_Calanda2")) %>%
+  group_by(Region, originSiteID, destSiteID, destPlotID) %>%
+  filter(Year %in% range(Year)) %>%
+  mutate(Range = ifelse(Year==min(Year), "Ymin", "Ymax")) %>%
+  group_by(Region, Range, type) %>%
+  summarize(RA = mean(RA)) %>%
+  ungroup() %>% 
+  #filter(Range == "Ymax") %>%
+  group_by(Range, type) %>%
+  summarize(RA=mean(RA), sdRA=sd(RA))
   
   
 RA_m <- RA %>% mutate(Gradient = paste(originSiteID, destSiteID, sep="_")) %>%
@@ -256,6 +268,7 @@ SR %>%
 #Need to remove IN_Kashmir, FR_Lautaret and US_Colorado as only 2 years of data
 
 #### Plot colonisation patterns ####
+colour_odt <- c("#A92420", "#016367", "#FBC00E")
 
 CO <- test %>% filter(!Region %in% c("FR_Lautaret", "IN_Kashmir", "US_Colorado")) %>% 
   select(Region, originSiteID, destSiteID, comm_inv, colonisation, colonisation_inv, colonisation_res) %>%
@@ -275,6 +288,16 @@ CO %>%
   scale_x_continuous(breaks=c(2010,2013,2016)) + 
   labs(title = 'Colonisation over time', color = "Treatment") 
 
+CO %>% filter(type != "all") %>%
+  ggplot(aes(x = Year, y = appearance, color = type)) + 
+  TP_theme() +
+  scale_x_continuous(breaks=c(2010,2013,2016, 2019)) + 
+  geom_line(aes(alpha=0.8)) +
+  scale_colour_manual(values = colour_odt) + 
+  geom_smooth(method = "lm", se = FALSE) +
+  facet_grid(~type) + 
+  labs(color = "Treatment Comparisons", y="Turnover", x='Duration (years)') 
+
 CO %>% group_by(Region, originSiteID, destSiteID, destPlotID, type) %>%
   do(fitCO = tidy(lm(appearance ~ Year, data = .))) %>% 
   unnest(fitCO) %>%
@@ -293,18 +316,75 @@ CO %>% group_by(Region, originSiteID, destSiteID, destPlotID, type) %>%
   labs(color = "Treatment", y = 'Colonisation rate') +
   labs(title = 'Colonisation rate', color = "Treatment") 
 
+CO %>% group_by(Region, originSiteID, destSiteID, destPlotID, type) %>%
+  do(fitCO = tidy(lm(appearance ~ Year, data = .))) %>% 
+  unnest(fitCO) %>%
+  filter(term=="Year", type!="all") %>%
+  group_by(Region, type) %>%
+  summarize(mid = mean(estimate, na.rm=T), sd=sd(estimate, na.rm=T)) %>%
+  ggplot() + 
+  scale_colour_manual(values = colour_odt) + 
+  scale_size_manual(values = c(4,2,2)) +
+  geom_point(aes(y=type, x=mid, color=type, size=type)) +
+  geom_linerange(aes(xmin=mid-sd, xmax=mid+sd, 
+                     y=type, color=type)) +
+  geom_vline(aes(xintercept=0)) +
+  facet_wrap(~Region, nrow=3) +
+  TP_theme() + 
+  labs(color = "Treatment", y = 'Colonisation rate') +
+  labs(title = 'Colonisation rate', color = "Treatment") 
+
+CO %>% group_by(Region, originSiteID, destSiteID, destPlotID, type) %>%
+  do(fitCO = tidy(lm(appearance ~ Year, data = .))) %>% 
+  unnest(fitCO) %>%
+  filter(term=="Year", type!="all") %>%
+  group_by(type) %>%
+  summarize(mid = mean(estimate, na.rm=T), sd=sd(estimate, na.rm=T)) %>%
+  ggplot() + 
+  scale_colour_manual(values = colour_odt) + 
+  scale_size_manual(values = c(4,2,2)) +
+  geom_point(aes(y=type, x=mid, color=type, size=type)) +
+  geom_linerange(aes(xmin=mid-sd, xmax=mid+sd, 
+                     y=type, color=type)) +
+  geom_vline(aes(xintercept=0)) +
+  #facet_wrap(~Region, nrow=3) +
+  TP_theme() + 
+  labs(color = "Treatment", y = 'Colonisation rate') +
+  labs(title = 'Colonisation rate', color = "Treatment") 
+
 CO_m <- CO %>% mutate(Gradient = paste(originSiteID, destSiteID, sep="_")) %>%
   mutate(col = 0.00001+(1-2*0.00001)*(appearance-min(appearance))/(max(appearance)-min(appearance)))  %>%
   mutate(Years = scale(Year)) %>%
   filter(type != "all")
 
 mC = brm(
-  col ~ 0 + type + Years:type + (Years|Region/Gradient), 
+  col ~ 0 + type*Years + (Years|Region/Gradient), 
   data = CO_m,
   family=Beta(link = "logit", link_phi = "log") # data scaled between 0 and 1
 )
 
-#### Plot exctinction patterns ####
+mC = brm(
+  col ~ 0 + type + type:Years + (type:Years|Region/Gradient), 
+  data = CO_m,
+  family=Beta(link = "logit", link_phi = "log") # data scaled between 0 and 1
+)
+
+plot(mC)
+mC
+pp_check(mC)
+inv_logit_scaled(-0.12)
+
+CO_m %>%
+  data_grid(type=type, Years = seq_range(Years, n = 101)) %>%
+  add_predicted_draws(mC, scale = "response", re_formula = NA) %>%
+  ggplot(aes(x = Years, y = col, color = ordered(type), fill = ordered(type))) +
+  stat_lineribbon(aes(y = .prediction), .width = c(.95, .80, .50), alpha = 1/4) +
+  geom_point(data = CO_m) +
+  facet_grid(~type) +
+  scale_fill_brewer(palette = "Set2") +
+  scale_color_brewer(palette = "Dark2")
+
+#### Plot extinction patterns ####
 EX <- test %>% filter(!Region %in% c("FR_Lautaret", "IN_Kashmir", "US_Colorado")) %>%
   select(Region, originSiteID, destSiteID, comm_inv, extinction, extinction_inv, extinction_res) %>%
   mutate(comm_sim = map(comm_inv, ~.x %>% select(destPlotID) %>% distinct())) %>%
@@ -347,10 +427,28 @@ EX_m <- EX %>% mutate(Gradient = paste(originSiteID, destSiteID, sep="_")) %>%
   filter(type != "all")
 
 mE = brm(
-  ext ~   0 + type + Years:type + (Years|Region/Gradient), 
+  ext ~   0 + Years + Years:type + (Years|Region/Gradient), 
   data = EX_m,
   family=Beta(link = "logit", link_phi = "log") # data scaled between 0 and 1
 )
+
+mE = brm(
+  ext ~ Region*Years + (Years|Gradient), 
+  data = EX_m,
+  family=Beta(link = "logit", link_phi = "log") # data scaled between 0 and 1
+)
+
+mE
+
+plogis(-1.42)
+
+BetaGLM <- betareg(ext ~  type*Years, 
+                   data = EX_m)
+m1 <- lme(ext ~  type*Years, random = ~ Years|Gradient, 
+                   data = EX_m, method="ML")
+m2 <- lme(ext ~  Years, random = ~ Years|Gradient, 
+          data = EX_m, method="ML")
+anova(m1, m2)
 
 #### Plot turnover patterns ####
 TU <- test %>% filter(!Region %in% c("FR_Lautaret", "IN_Kashmir", "US_Colorado")) %>%
@@ -361,15 +459,26 @@ TU <- test %>% filter(!Region %in% c("FR_Lautaret", "IN_Kashmir", "US_Colorado")
   unnest(dat2) %>%
   mutate(type = recode(sp_pool, "1"="all", "2"="invader", "3"="resident")) 
 
-TU %>%
+TU %>% 
   ggplot(aes(x = Year, y = total)) + 
   scale_colour_manual(values = colour_odt) + 
-  geom_line(aes(group=destPlotID, color=type), alpha=0.2) +
+  geom_point(aes(group=destPlotID, color=type), alpha=0.05) +
   geom_smooth(aes(group = type, color=type), method = "lm", se = F) +
-  facet_wrap(~Region, nrow=3) +
+  facet_wrap(~Region, nrow=2) +
   TP_theme() + 
   scale_x_continuous(breaks=c(2010,2013,2016)) + 
   labs(title = 'Turnover over time', color = "Treatment") 
+
+TU %>% filter(type != "all") %>%
+  ggplot(aes(x = Year, y = total, color = type)) + 
+  TP_theme() +
+  scale_x_continuous(breaks=c(2010,2013,2016, 2019)) + 
+  geom_line(aes(alpha=0.8)) +
+  scale_colour_manual(values = colour_odt) + 
+  geom_smooth(method = "lm", se = FALSE) +
+  facet_grid(~type) + 
+  labs(color = "Treatment Comparisons", y="Turnover", x='Duration (years)') 
+
 
 TU %>% group_by(Region, originSiteID, destSiteID, destPlotID, type) %>%
   do(fitTU = tidy(lm(total ~ Year, data = .))) %>% 

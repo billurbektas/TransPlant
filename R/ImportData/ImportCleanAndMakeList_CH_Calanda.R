@@ -28,7 +28,9 @@ CleanCommunity_CH_Calanda <- function(community_CH_Calanda_raw) {
     filter(Treatment %in% c("LocalControl", "Warm")) %>% 
     mutate(destPlotID = as.character(destPlotID), destBlockID = if (exists('destBlockID', where = .)) as.character(destBlockID) else NA) %>%
     filter(destPlotID != "CalNA.NA") %>%
-    select(Year, Treatment, originSiteID, destSiteID, destBlockID, destPlotID, UniqueID, SpeciesName, Cover)
+    select(Year, Treatment, originSiteID, destSiteID, destBlockID, destPlotID, UniqueID, SpeciesName, Cover) %>%
+    # Fix issue of double entries of species in two plots (Cal03.04, x2 in 2017 and Cal05.04, x2 in 2014). These look like duplicates
+    distinct()
   
   dat2 <- dat %>%  
     group_by_at(vars(-SpeciesName, -Cover)) %>%

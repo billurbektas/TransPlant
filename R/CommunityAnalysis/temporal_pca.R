@@ -1,18 +1,19 @@
-dat <- dat %>% filter(!is.na(Rel_Cover))#4 NAs in DE_Susalps, correct that in cleaning file
+dat_fil <- dat %>% filter(!is.na(Rel_Cover)) %>% #4 NAs in DE_Susalps, correct that in cleaning file. We are missing data from 2016 from some sites (EB-FE and EB-BT and EB-GW)
+  filter(!(Region=="DE_Susalps" & Year==2016))
 source('R/theme_ggplot.R')
 library("patchwork")
 
 #### RUN PCA AND EXTRACT DISTANCES ####
-dd <- dat %>% 
+dd <- dat_fil %>% 
   select(Region, originSiteID, destSiteID, Treatment) %>% 
   distinct() %>% 
   filter(Treatment == "Warm") %>% 
   select(-Treatment) %>% 
   mutate(comm = pmap(.l = list(R = Region, O = originSiteID, D = destSiteID), .f = function(R, O, D){
         bind_rows(
-          originControls = dat %>% filter(Region == R, destSiteID == O, Treatment == "LocalControl"),
-          destControls = dat %>% filter(Region == R, destSiteID == D, Treatment == "LocalControl"),
-          warmed =  dat %>% filter(Region == R, destSiteID == D, Treatment == "Warm"),
+          originControls = dat_fil %>% filter(Region == R, destSiteID == O, Treatment == "LocalControl"),
+          destControls = dat_fil %>% filter(Region == R, destSiteID == D, Treatment == "LocalControl"),
+          warmed =  dat_fil %>% filter(Region == R, destSiteID == D, Treatment == "Warm"),
           .id = "ODT")
       })) %>% 
   mutate(comm_wide = map(comm, ~{
