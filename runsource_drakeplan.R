@@ -24,4 +24,4 @@ loadd()
 drake_failed()
 
 # View dependency graph
-r_vis_drake_graph(source = "TransPlant_DrakePlan.R", targets_only = TRUE)
+r_vis_drake_graph(source = "R/TransPlant_DrakePlan.R", targets_only = TRUE)
