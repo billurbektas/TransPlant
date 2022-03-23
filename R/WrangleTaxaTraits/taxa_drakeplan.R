@@ -65,9 +65,9 @@ TaxaPlan <- bind_rows(ImportSiteTaxaDrakePlan, MergeTaxaDrakePlan, CleanSpeciesN
 conf <- drake_config(TaxaPlan)
 conf
 # 
-# make(MyPlan)
-# 
-# loadd(cleanedspecies)
+ make(TaxaPlan)
+ 
+ loadd(cleanedspecies)
 
 
 #cleanedspecies %>% filter(is.na(gni_uuid)) %>% View()
