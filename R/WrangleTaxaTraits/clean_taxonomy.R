@@ -34,8 +34,8 @@ merge_site_taxa_data <- function(sitedata) {
   sitedata_taxa <- sitedata %>% 
     map_df("community", .id='Region') %>%
     ungroup() %>%
-    select(Region, destSiteID, SpeciesName) %>%
-    unique() 
+    dplyr::select(Region, destSiteID, SpeciesName) %>%
+    base::unique() 
   
   return(sitedata_taxa) 
   
@@ -90,7 +90,7 @@ resolve_species <- function(taxa){
   taxa$copy_taxa <- copy_taxa
   
   # call GNR (does not deal with duplicated data!)
-  taxa_gnr <- gnr_resolve(names = unique(copy_taxa), 
+  taxa_gnr <- gnr_resolve(names = base::unique(copy_taxa), 
                           best_match_only = T, 
                           data_source_ids = c(1, 12),
                           fields = "all",
@@ -99,7 +99,7 @@ resolve_species <- function(taxa){
   
   # subset for supplied name, unique ID, match score and matched name
   gnr_subset <- taxa_gnr %>% 
-    select(user_supplied_name, gni_uuid, score, matched_name2) %>%
+    dplyr::select(user_supplied_name, gni_uuid, score, matched_name2) %>%
     rename(matched_name = matched_name2)
   
   # construct data frame from taxa input, make character, bind GNR output
