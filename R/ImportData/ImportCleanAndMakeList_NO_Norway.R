@@ -60,6 +60,7 @@ CleanCommunity_NO_Norway <- function(community_NO_Norway_raw){
   return(list(comm=comm, cover=cover))
 }
 
+#testdat <- read_csv("data/NO_Norway/traitdata_NO.csv")
 
 # Clean trait data
 CleanTrait_NO_Norway <- function(trait_NO_Norway_raw){
@@ -70,7 +71,7 @@ CleanTrait_NO_Norway <- function(trait_NO_Norway_raw){
            Country = "Norway",
            Site = recode(Site, "Lav" = "Lavisdalen", "Hog" = "Hogsete", "Ulv" =  "Ulvhaugen", "Vik" = "Vikesland", "Gud" = "Gudmedalen", "Ram" = "Rambera", "Arh" = "Arhelleren", "Skj" = "Skjellingahaugen", "Ves" = "Veskre", "Alr" = "Alrust", "Ovs" = "Ovstedal", "Fau" = "Fauske")) %>% 
     select(-1, -Date, -Longitude, -Latitude, -Elevation, -Project, -Gradient) %>%
-    gather(key = Trait, value = Value, -Country, -Year, -Site, -Individual_number, -SpeciesName, -PlantID, -Collector) %>% 
+    tidyr::gather(key = Trait, value = Value, -Country, -Year, -Site, -Individual_number, -SpeciesName, -PlantID, -Collector) %>% 
     filter(!is.na(Value)) %>% rename(destSiteID=Site)
   
   return(dat2)
