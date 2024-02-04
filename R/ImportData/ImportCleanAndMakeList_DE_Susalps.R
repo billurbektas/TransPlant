@@ -68,8 +68,8 @@ CleanMeta_DE_Susalps <- function(community_DE_Susalps){
     mutate(Elevation = as.numeric(recode(destSiteID, 'BT'=350, 'FE' = 600, 'GW'= 860, 'EB'= 1260)),
            Gradient = 'DE_Susalps',
            Country = 'Germany',
-           Longitude = as.numeric(recode(destSiteID, 'BT' = 11.3455,'FE' = 11.035853599, 'GW'= 11.015163599, 'EB'= 11.0927828)),
-           Latitude = as.numeric(recode(destSiteID, 'BT' = 49.5516, 'FE' = 47.4945552, 'GW'= 47.34111, 'EB'= 47.3058824)),
+           Longitude = as.numeric(recode(destSiteID, 'BT' = 11.581944,'FE' = 11.066260, 'GW'= 11.031010, 'EB'= 11.157730)),
+           Latitude = as.numeric(recode(destSiteID, 'BT' = 49.921111, 'FE' = 47.829320, 'GW'= 47.569750, 'EB'= 47.516340)),
            YearEstablished = 2016,
            PlotSize_m2 = 0.09) %>% #circle
     mutate(YearRange = (YearMax-YearEstablished)) %>% 

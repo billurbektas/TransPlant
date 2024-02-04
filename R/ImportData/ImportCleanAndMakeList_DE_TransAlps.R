@@ -65,8 +65,8 @@ CleanMeta_DE_TransAlps <- function(community_DE_TransAlps){
     mutate(Elevation = as.numeric(recode(destSiteID, 'BT' = 300, 'SP'= 1850, 'FP'= 2440)),
            Gradient = 'DE_TransAlps',
            Country = 'Germany/Switzerland',
-           Longitude = as.numeric(recode(destSiteID, 'BT' = 11.3455, 'SP'= 11.1819, 'FP'= 8.2517)),
-           Latitude = as.numeric(recode(destSiteID, 'BT' = 49.5516, 'SP'= 47.0744, 'FP'= 46.3436)),
+           Longitude = as.numeric(recode(destSiteID, 'BT' = 11.581944, 'SP'= 11.305278, 'FP'= 8.421389)),
+           Latitude = as.numeric(recode(destSiteID, 'BT' = 49.921111, 'SP'= 47.128889, 'FP'= 46.576667)),
            YearEstablished = 2016,
            PlotSize_m2 = 0.09) %>% #circle
     mutate(YearRange = (YearMax-YearEstablished)) %>% 

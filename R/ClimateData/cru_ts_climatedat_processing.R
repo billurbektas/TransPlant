@@ -1,10 +1,10 @@
 #### Read in climate data for all sites ####
-library(raster)
-install.packages('GSODR')
 library(GSODR)
-devtools::install_github("adamhsparks/GSODRdata")
-library(GSOD)
+library(remotes)
+library(sf)
 
+install.packages("remotes")
+remotes::install_github("adamhsparks/GSODRdata")
 nearest_stations(46.20299633094538, 7.062330594198718, 5)
 #1 within 5 km for Lavey, 1 within 75 km for Heibei...
 
@@ -22,17 +22,23 @@ temp[58:59, "YearRange"] <- 3
 temp[58:59, "PlotSize_m2"] <- 1 # Check this!
 head(temp)
 
-# Create spatial points coordinates data
-coords <- data.frame(x=as.numeric(temp$Longitude),y=as.numeric(temp$Latitude))
-points <- SpatialPoints(coords, proj4string = CRS("+proj=longlat"))
+metadata = read_excel(path = 'data/metadata/site_overview.xlsx', 
+                       sheet='Site level', skip = c(2))
+metadat = data.frame(gradient = metadata[,1], site = metadata[,2], lat =  metadata[,5], long = metadata[,6], elev=metadata[4], year1=metadata[7], yearn=metadata[8])
+colnames(metadat) = c('gradient', 'site', 'lat', 'long', 'elev', 'year1', 'yearn') 
+metadat = metadat %>% group_by(gradient,site) %>% summarize(lat=mean(as.numeric(lat)), long=mean(as.numeric(long)),
+                                                             yearn=mean(yearn), year1=mean(year1), 
+                                                             elev=elev, Yearrange=yearn-year1)
+coords = data.frame(x=metadat$long,y=metadat$lat)
+points = vect(coords, proj4string = pre@crs)
 
 # Read in CRU TS data
 
 library(raster)
 library(ncdf4)
 
-pre <- brick("./climate/CRU_TS/cru_ts4.04.1901.2019.pre.dat.nc", varname="pre") #Precipitation
-tmp <- brick("./climate/CRU_TS/cru_ts4.04.1901.2019.tmp.dat.nc", varname="tmp") # Mean monthly temperature
+pre = brick("data/climate/cru_ts4.07.1901.2022.pre.dat.nc", varname="pre") #Precipitation
+tmp <- brick("./cru_ts4.04.1901.2019.tmp.dat.nc", varname="tmp") # Mean monthly temperature
 pre.sites <- extract(pre, points)
 tmp.sites <- extract(tmp, points)
 

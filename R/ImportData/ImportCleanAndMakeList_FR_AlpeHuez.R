@@ -68,7 +68,7 @@ CleanMeta_FR_AlpeHuez <- function(community_FR_AlpeHuez){
            Gradient = 'FR_AlpeHuez',
            Country = 'France',
            Longitude = as.numeric(recode(destSiteID, 'HIGH' = 6.0554500, 'LOW' = 6.035933)),
-           Latitude = as.numeric(recode(destSiteID, 'HIGH' = 45.0999830, 'LOW' = 45.0882000)),
+           Latitude = as.numeric(recode(destSiteID, 'HIGH' = 45.0999830, 'LOW' = 45.08820)),
            YearEstablished = 2014,
            PlotSize_m2 = 0.25) %>% 
     mutate(YearRange = (YearMax-YearEstablished)) %>% 
