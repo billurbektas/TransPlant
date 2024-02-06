@@ -44,7 +44,7 @@ merge_site_taxa_data <- function(sitedata) {
 merge_all_taxa_data <- function(alldat) {
   
   #merge site data and species codes used for those three sites
-  site_code <- left_join(alldat$sitetaxa, alldat$spcodes, by=c("Region", "SpeciesName"="code")) %>% #sitetaxa is 4481, site_code is 4527 (check what is being added)
+  site_code <- left_join(alldat$sitetaxa, alldat$spcodes, by=c("Region", "SpeciesName"="code"), relationship = "many-to-many") %>% #sitetaxa is 4481, site_code is 4527 (check what is being added)
     mutate(original_name = ifelse(!is.na(taxa), taxa, SpeciesName))
   
   setdiff(c(alldat$sitetaxa$SpeciesName), c(site_code$SpeciesName))# both are zero?
