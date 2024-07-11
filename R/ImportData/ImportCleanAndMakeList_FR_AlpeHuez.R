@@ -8,8 +8,7 @@
 ImportCommunity_FR_AlpeHuez <- function(){
  
    #import data
-  files <- list.files("data/FR_AlpeHuez/FR_AlpeHuez_commdata/")
-  community_FR_AlpeHuez_raw <- map_df(files, ~ read_excel(paste0("data/FR_AlpeHuez/FR_AlpeHuez_commdata/", .), sheet = "relevee"))
+  community_FR_AlpeHuez_raw <- read_excel("data/FR_AlpeHuez/FR_AlpeHuez_commdata/2023-07_MIREN Transplant Experiment_datasheet_140405_AlpeHuezFRANCE.xlsx", sheet = "relevee")
   
   return(community_FR_AlpeHuez_raw)
   }
@@ -20,18 +19,23 @@ ImportCommunity_FR_AlpeHuez <- function(){
 # Cleaning AlpeHuez community data
 CleanCommunity_FR_AlpeHuez <- function(community_FR_AlpeHuez_raw){
     dat <- community_FR_AlpeHuez_raw %>% 
-    select(c(site:cover.class), -plot) %>% 
-    rename(SpeciesName = `species.name` , Cover = `cover.class` , destSiteID = site , destBlockID = block , plotID = plot.ID , Treatment = treatment , Date = date)%>% 
+    select(c(site:cover.class), -plot, -species.name) %>% 
+    rename(SpeciesName = `corrected name` , Cover = `cover.class` , destSiteID = site , destBlockID = block , plotID = plot.ID , Treatment = treatment , Date = date)%>% 
      mutate(SpeciesName = sub("^(\\S*\\s+\\S+).*", "\\1", SpeciesName)) %>%     # This selects only the first two words in SpeciesName.
       filter(Treatment %in% c("HIGH_TURF", "LOW_TURF")) %>% 
+      mutate(Date = case_when(
+        str_detect(Date, "^\\d{4}-\\d{2}-\\d{2}$") ~ as.Date(Date, format = "%Y-%m-%d"),
+        str_detect(Date, "^\\d{2}/\\d{2}/\\d{4}$") ~ as.Date(Date, format = "%m/%d/%Y"),
+        str_detect(Date, "^\\d{2}/\\d{2}/\\d{2}$") ~ as.Date(Date, format = "%d/%m/%Y"),
+        TRUE ~ NA_Date_))%>%
       mutate(originSiteID = str_replace(Treatment, '(.*)_.*', "\\1"), 
              originSiteID = toupper(originSiteID),
              Treatment = case_when(Treatment =="LOW_TURF" & destSiteID == "LOW" ~ "LocalControl" , 
                                  Treatment =="HIGH_TURF" & destSiteID == "LOW" ~ "Warm" , 
                                  Treatment =="HIGH_TURF" & destSiteID == "HIGH" ~ "LocalControl"),
            Year = year(as.Date(Date, format='%Y-%m-%d')),
-           Cover = recode(Cover, `<1` = "0.5" , `2-5` = "3.5" , `6-10` = "8"),
-           Cover= as.numeric(as.character(Cover))) %>% 
+           Cover = recode(Cover, `+` = "0.5"),
+           Cover = as.numeric(as.character(Cover))) %>% 
            select(-Date) %>% 
       mutate(UniqueID = paste(Year, originSiteID, destSiteID, plotID, sep='_')) %>% 
       mutate(destPlotID = paste(originSiteID, destSiteID, plotID, sep='_')) %>% 
