@@ -6,7 +6,7 @@ source("R/ImportData/community_US_Colorado/load_us_col.r")
 
 #### Import Community ####
 ImportCommunity_US_Colorado <- function(){
-  community_US_Colorado_raw<-load_cover_US_Colorado()
+  community_US_Colorado_raw<-read.csv(file = "./data/US_Colorado/US_Colorado_commdata/Final_IntensiveCover_2018-2023_RMBLTransplant.csv")
   return(community_US_Colorado_raw)
 } 
 
@@ -15,7 +15,11 @@ ImportCommunity_US_Colorado <- function(){
 # Cleaning Colorado community data
 CleanCommunity_US_Colorado <- function(community_US_Colorado_raw){
   dat <- community_US_Colorado_raw %>% 
-    rename(SpeciesName = species, Cover = percentCover) %>% 
+    dplyr::select(year, turfID, species, percentCover)%>%
+    rename(SpeciesName = species, Cover = percentCover, Year = year) %>% 
+    mutate(Year = as.numeric(Year),
+           Cover = as.numeric(Cover)) %>%
+    filter(!is.na(Cover))%>%
     mutate(destSiteID = substr(turfID, 1, 2),
            destBlockID = substr(turfID, 3, 3),
            Treatment = substr(turfID, 7, 8),
@@ -25,13 +29,13 @@ CleanCommunity_US_Colorado <- function(community_US_Colorado_raw){
     rename(destPlotID = turfID) %>% 
     mutate(UniqueID = paste(Year, originSiteID, destSiteID, destBlockID, destPlotID, sep='_'), SpeciesName = recode(SpeciesName, 'Rock' = "rock", 'Moss' = "moss")) %>% 
     mutate(destPlotID = as.character(destPlotID), destBlockID = if (exists('destBlockID', where = .)) as.character(destBlockID) else NA) %>%
-    distinct() %>% #removes Viola nuttallii which was doubled in 2019
-    filter(!destBlockID %in% c("6")) #filter out new turfs added end of 2018 (though this could be useful for single year of data for non-temporal analyses)
+    distinct() #removes Viola nuttallii which was doubled in 2019
+    #filter(!destBlockID %in% c("6")) #filter out new turfs added end of 2018 (though this could be useful for single year of data for non-temporal analyses)
   
   dat2 <- dat %>%  
     filter(!is.na(Cover)) %>%
     group_by_at(vars(-SpeciesName, -Cover)) %>%
-    summarise(SpeciesName = "Other",Cover = pmax((100 - sum(Cover)), 0)) %>% 
+    summarise(SpeciesName = "Other", Cover = pmax((100 - sum(Cover)), 0)) %>% 
     bind_rows(dat) %>% 
     mutate(Total_Cover = sum(Cover), Rel_Cover = Cover / Total_Cover)
   #dat2 %>% filter(Total_Cover<100) #There are plots with <100, so we need to create an Other cover class
@@ -77,21 +81,30 @@ CleanMeta_US_Colorado <- function(community_US_Colorado){
 
 #Clean trait data
 CleanTrait_US_Colorado <- function(trait_US_Colorado_raw){
-  trait_plot <- trait_US_Colorado_raw %>%
-    rename(destPlotID = turfID, SpeciesName = species, Individual_number = individual) %>%
-    rename(Wet_Mass_g = "wetMassg", Dry_Mass_g = "dryMassg", Leaf_Area_cm2 = "leafAreacm2", Plant_Veg_Height_cm = "leafHeight_cm",
-           SLA_cm2_g = "SLA",  Leaf_Thickness_Ave_mm = "thicknessAvgorSingle") %>%
+  trait_plot_site <- trait_US_Colorado_raw %>%
+    dplyr::select(-destPlotID)%>%
+    rename(destPlotID = turfID, SpeciesName = species, Individual_number = individualNumber, Year = year, Treatment = treatmentAbbrev) %>%
+    mutate(destSiteID = substr(destPlotID, 1, 2))%>%
+    mutate(destSiteID = case_when(is.na(destSiteID) & originSite == "Monument" ~ "mo",
+                                  is.na(destSiteID) & originSite == "Pfeiler" ~ "pf",
+                                  is.na(destSiteID) & originSite == "Upper Montane"~"um",
+                                  .default = destSiteID))%>%
+    mutate(Treatment = recode(Treatment, "c1" = "Cold", "c2" = "Cold", "w1" = "Warm", "w2" = "Warm", "nu" = "NettedControl", "u_" = "Control", "ws" = "LocalControl")) %>% 
+    mutate(Year = as.numeric(Year))%>%
+    rename(Wet_Mass_g = "wetMassg", 
+           Dry_Mass_g = "dryMassg", 
+           Leaf_Area_cm2 = "leafAreacm2", 
+           Plant_Veg_Height_cm = "vegHeightcm",
+           SLA_cm2_g = "SLA",  
+           Leaf_Thickness_Ave_mm = "thickAvgmm") %>%
     mutate(Country = "USA") %>%
-    select(Country, destPlotID, SpeciesName, Individual_number, Wet_Mass_g, Dry_Mass_g, Leaf_Area_cm2, SLA_cm2_g, LDMC, Leaf_Thickness_Ave_mm, Plant_Veg_Height_cm) %>%
+    select(Country, destSiteID, destPlotID, Treatment, Year, SpeciesName, Individual_number, Wet_Mass_g, Dry_Mass_g, Leaf_Area_cm2, SLA_cm2_g, LDMC, Leaf_Thickness_Ave_mm, Plant_Veg_Height_cm) %>%
     mutate(Plant_Veg_Height_cm = as.numeric(Plant_Veg_Height_cm)) %>%
     pivot_longer(names_to = "Trait", values_to = "Value", cols = c(Wet_Mass_g, Dry_Mass_g, Leaf_Area_cm2, SLA_cm2_g, LDMC, Leaf_Thickness_Ave_mm, Plant_Veg_Height_cm)) %>%
     mutate(Individual_number = as.character(Individual_number), Value = as.numeric(Value)) %>%
-    filter(!is.na(Value))
-  
-  trait_site <- trait_plot %>%
-    mutate(destSiteID = substr(destPlotID, 1, 2)) %>%
-    select(Country, destSiteID, destPlotID, SpeciesName, Individual_number, Trait, Value) 
-  return(trait_site)
+    filter(!is.na(Value))%>%
+    select(Country, destSiteID, destPlotID, Treatment, Year, SpeciesName, Individual_number, Trait, Value) 
+  return(trait_plot_site)
 }
 
 #### IMPORT, CLEAN AND MAKE LIST #### 
@@ -99,7 +112,7 @@ ImportClean_US_Colorado <- function(){
   
   ### IMPORT DATA
   community_US_Colorado_raw = ImportCommunity_US_Colorado()
-  trait_US_Colorado_raw = read.csv("./data/US_Colorado/US_Colorado_traitdata/RMBLtransplant_leafTraits2018.csv")
+  trait_US_Colorado_raw = read.csv("./data/US_Colorado/US_Colorado_traitdata/Traits_2017-2021_RMBLTransplant.csv")
   
   ### CLEAN DATA SETS
   cleaned_US_Colorado = CleanCommunity_US_Colorado(community_US_Colorado_raw)
