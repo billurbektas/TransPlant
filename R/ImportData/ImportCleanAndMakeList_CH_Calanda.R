@@ -81,6 +81,7 @@ CleanTrait_CH_Calanda <- function(trait_CH_Calanda_raw){
     select(destSiteID, SpeciesName,Individual_number, PlantID, Plant_Veg_Height_cm, Plant_Rep_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Area_cm2) %>%
     mutate_all(~gsub(',','', .)) %>%
     mutate(Country = "Switzerland",
+           Gradient = "CH_Calanda",
            destSiteID = recode(destSiteID, 'PEAK' = 'Pea', 'CAL' = 'Cal', 'NES' = 'Nes'),
            Plant_Veg_Height_cm =   gsub("[^0-9.-]", "", Plant_Veg_Height_cm),
            Plant_Veg_Height_cm = as.numeric(as.character(Plant_Veg_Height_cm)),
@@ -99,7 +100,8 @@ CleanTrait_CH_Calanda <- function(trait_CH_Calanda_raw){
            LDMC = ifelse(!is.na(Dry_Mass_g)&!is.na(Wet_Mass_g), Dry_Mass_g/Wet_Mass_g, NA),
            SLA_cm2_g = ifelse(!is.na(Leaf_Area_cm2)&!is.na(Dry_Mass_g), Leaf_Area_cm2/Dry_Mass_g, NA)) %>%
     dplyr::select(Country, destSiteID, SpeciesName, Individual_number, PlantID, Plant_Veg_Height_cm, Plant_Rep_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Area_cm2, SLA_cm2_g, LDMC) %>%
-    gather(key = Trait, value = Value, -Country, -destSiteID, -SpeciesName, -Individual_number, -PlantID) %>%
+    pivot_longer(cols = Plant_Veg_Height_cm:LDMC, names_to = "Trait", values_to = "Value")%>%
+    mutate(PlantID = paste(destSiteID, Individual_number, SpeciesName, sep = "_"))%>%
     filter(!is.na(Value))
   return(trait)
 }
