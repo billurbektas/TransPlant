@@ -97,13 +97,16 @@ CleanTrait_US_Colorado <- function(trait_US_Colorado_raw){
            Plant_Veg_Height_cm = "vegHeightcm",
            SLA_cm2_g = "SLA",  
            Leaf_Thickness_Ave_mm = "thickAvgmm") %>%
-    mutate(Country = "USA") %>%
-    select(Country, destSiteID, destPlotID, Treatment, Year, SpeciesName, Individual_number, Wet_Mass_g, Dry_Mass_g, Leaf_Area_cm2, SLA_cm2_g, LDMC, Leaf_Thickness_Ave_mm, Plant_Veg_Height_cm) %>%
+    mutate(Country = "USA",
+           Gradient = "US_Colorado") %>%
+    dplyr::select(Country, Gradient, destSiteID, destPlotID, Treatment, Year, SpeciesName, Individual_number, Wet_Mass_g, Dry_Mass_g, Leaf_Area_cm2, SLA_cm2_g, LDMC, Leaf_Thickness_Ave_mm, Plant_Veg_Height_cm) %>%
     mutate(Plant_Veg_Height_cm = as.numeric(Plant_Veg_Height_cm)) %>%
     pivot_longer(names_to = "Trait", values_to = "Value", cols = c(Wet_Mass_g, Dry_Mass_g, Leaf_Area_cm2, SLA_cm2_g, LDMC, Leaf_Thickness_Ave_mm, Plant_Veg_Height_cm)) %>%
+    mutate(UniqueID = paste(Year, destPlotID, sep='_')) %>% 
+    mutate(PlantID = paste(UniqueID, Individual_number, SpeciesName, sep = "_"))%>%
     mutate(Individual_number = as.character(Individual_number), Value = as.numeric(Value)) %>%
     filter(!is.na(Value))%>%
-    select(Country, destSiteID, destPlotID, Treatment, Year, SpeciesName, Individual_number, Trait, Value) 
+    select(Country, Gradient, destSiteID, Year, destPlotID, UniqueID, Treatment, SpeciesName, Individual_number, PlantID, Trait, Value) 
   return(trait_plot_site)
 }
 

@@ -69,10 +69,15 @@ CleanTrait_NO_Norway <- function(trait_NO_Norway_raw){
     mutate(SpeciesName = trimws(SpeciesName),
            Year = year(Date),
            Country = "Norway",
-           Site = recode(Site, "Lav" = "Lavisdalen", "Hog" = "Hogsete", "Ulv" =  "Ulvhaugen", "Vik" = "Vikesland", "Gud" = "Gudmedalen", "Ram" = "Rambera", "Arh" = "Arhelleren", "Skj" = "Skjellingahaugen", "Ves" = "Veskre", "Alr" = "Alrust", "Ovs" = "Ovstedal", "Fau" = "Fauske")) %>% 
-    select(-1, -Date, -Longitude, -Latitude, -Elevation, -Project, -Gradient) %>%
-    tidyr::gather(key = Trait, value = Value, -Country, -Year, -Site, -Individual_number, -SpeciesName, -PlantID, -Collector) %>% 
-    filter(!is.na(Value)) %>% rename(destSiteID=Site)
+           destSiteID = recode(Site, "Lav" = "Lavisdalen", "Hog" = "Hogsete", "Ulv" =  "Ulvhaugen", "Vik" = "Vikesland", "Gud" = "Gudmedalen", "Ram" = "Rambera", "Arh" = "Arhelleren", "Skj" = "Skjellingahaugen", "Ves" = "Veskre", "Alr" = "Alrust", "Ovs" = "Ovstedal", "Fau" = "Fauske"),
+           Gradient = case_when(destSiteID %in% c("Ulvhaugen", "Alrust", "Fauske")~ "NO_Ulvhaugen" ,
+                                destSiteID %in% c("Lavisdalen", "Hogsete", "Vikesland")~ "NO_Lavisdalen" ,
+                                destSiteID %in% c("Gudmedalen", "Rambera", "Arhelleren")~ "NO_Gudmedalen" ,  
+                                destSiteID %in% c("Skjellingahaugen", "Veskre", "Ovstedal")~ "NO_Skjellingahaugen")) %>% 
+    dplyr::select(-1, -Date, -Longitude, -Latitude, -Elevation, -Project, -Collector, -Site) %>%
+    mutate(PlantID = paste(destSiteID, Individual_number, SpeciesName, sep = "_"))%>%
+    pivot_longer(cols = Leaf_Thickness_1_mm:CN_ratio, names_to = "Trait", values_to = "Value")%>%
+    filter(!is.na(Value))
   
   return(dat2)
 }

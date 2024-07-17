@@ -85,11 +85,16 @@ CleanTrait_IT_MatschMazia1 <- function(trait_IT_MatschMazia1_raw){
            LDMC = "LDMC [mg g-1]", SLA_mm2_mg = "SLA [mm2 mg-1]",  C_percent = "Carbon [%]", N_percent = "Nitrogen [%]", N_conc_mg_g = "LNC [mg g-1]", C_conc_mg_g = "LCC [mg g-1]"  ) %>%
     mutate_all(~gsub(',','', .)) %>%
     mutate(Country = "Italy",
+           Gradient = "IT_MatschMazia1",
            destSiteID = recode(Elevation,  "989.8" = "Low", "1476.46" = "High"),
            SLA_cm2_g = 10*as.numeric(SLA_mm2_mg),
+           LDMC = as.numeric(LDMC)/1000,
            CN_ratio = as.numeric(C_percent)/as.numeric(N_percent)) %>%
-    dplyr::select(Country, Elevation, destSiteID, SpeciesName, Individual_number, Wet_Mass_g, Dry_Mass_g, Plant_Veg_Height_cm, Plant_Rep_Height_cm, Leaf_Area_cm2, SLA_cm2_g, LDMC, C_percent, N_percent , CN_ratio, N_conc_mg_g, C_conc_mg_g) %>%
-    gather(key = Trait, value = Value, -Country,-Elevation, -destSiteID, -SpeciesName, -Individual_number) %>%
+    mutate(across(Plant_Veg_Height_cm:C_conc_mg_g, ~as.numeric(.x)))%>%
+    mutate(Individual_number = str_extract(Individual_number, "\\d+$"))%>%
+    dplyr::select(Country, Gradient, destSiteID, SpeciesName, Individual_number, Plant_Veg_Height_cm:C_conc_mg_g) %>%
+    pivot_longer(cols = Plant_Veg_Height_cm:C_conc_mg_g, names_to = "Trait", values_to = "Value")%>%
+    mutate(PlantID = paste(destSiteID, Individual_number, SpeciesName, sep = "_"))%>%
     mutate(Individual_number = as.character(Individual_number), Value = as.numeric(Value)) %>%
     filter(!is.na(Value))
   return(trait)

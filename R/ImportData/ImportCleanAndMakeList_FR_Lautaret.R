@@ -19,7 +19,7 @@ CleanCommunity_FR_Lautaret <- function(community_FR_Lautaret_raw, community_FR_L
   dat <- community_FR_Lautaret_raw %>% 
     mutate(Replicate = ifelse(nchar(Replicate)==1, paste0("0", Replicate), Replicate))%>%
     filter(Subplot %in% c('0','B')) %>% #Choosing 0 subplot (controls) and B subplot (treatment) as it had no added individuals into it
-    mutate(plotID = paste0(Site_Treatment, "_", Replicate), 
+    mutate(
     Cover = number_of_obs,
     SpeciesName = ifelse(is.na(word(Species, 2)), paste0(Species, " sp."), Species))%>%
     separate(Site_Treatment, c("destSiteID", "Treatment"), "_") %>% #called CP or TP (control or transplant)
@@ -31,10 +31,9 @@ CleanCommunity_FR_Lautaret <- function(community_FR_Lautaret_raw, community_FR_L
                                     destSiteID == "L" & Treatment == 'CP' ~ "LocalControl",
                                     destSiteID == "G" & Treatment == 'CP' ~ "LocalControl",
                                     destSiteID == "G" & Treatment == 'TP' ~ "Cold"))%>%
-    select(Year, destSiteID, originSiteID, plotID, Treatment, SpeciesName, Cover) %>%
-    mutate(UniqueID = paste(Year, originSiteID, destSiteID, plotID, sep='_')) %>% 
-    mutate(destPlotID = paste(originSiteID, destSiteID, plotID, sep='_')) %>% 
-    select(-plotID) %>% 
+    select(Year, destSiteID, originSiteID, Replicate, Treatment, SpeciesName, Cover) %>%
+    mutate(UniqueID = paste(Year, originSiteID, destSiteID, Replicate, sep='_')) %>% 
+    mutate(destPlotID = paste(originSiteID, destSiteID, Replicate, sep='_')) %>% 
     mutate(destPlotID = as.character(destPlotID), destBlockID = if (exists('destBlockID', where = .)) as.character(destBlockID) else NA) %>%
     distinct() %>% #one duplicated row in original dataframe
     group_by(Year, originSiteID, destSiteID, destBlockID, destPlotID, UniqueID, Treatment, SpeciesName) %>%
@@ -46,7 +45,7 @@ CleanCommunity_FR_Lautaret <- function(community_FR_Lautaret_raw, community_FR_L
     mutate(Year = 2022,
            subplot = sapply(code_plot, function(x) sub(".*_(.*)$", "\\1", x)),
            destSiteID = sapply(code_plot, function(x) sub(".*_(High|Low)_.*", "\\1", x)),
-           rep  = sapply(code_plot, function(x) sub(".*_(\\d{2})_.*", "\\1", x)))%>%
+           Replicate  = sapply(code_plot, function(x) sub(".*_(\\d{2})_.*", "\\1", x)))%>%
     rename(SpeciesName = lb_nom, Cover = prct_recouvrement)%>%
     filter(subplot %in% c("CTRL","B"))%>%
     mutate(destSiteID = recode(destSiteID, 
@@ -56,10 +55,6 @@ CleanCommunity_FR_Lautaret <- function(community_FR_Lautaret_raw, community_FR_L
                                     destSiteID == "G" & subplot == 'CTRL' ~ "G",
                                     destSiteID == "L" & subplot == 'B' ~ "G",
                                     destSiteID == "G" & subplot == 'B' ~ "L"),
-           plotID = case_when(destSiteID == "L" & subplot == 'CTRL' ~ "L_L_L_CP", 
-                              destSiteID == "G" & subplot == 'CTRL' ~ "G_G_G_CP",
-                              destSiteID == "L" & subplot == 'B' ~ "G_L_L_TP",
-                              destSiteID == "G" & subplot == 'B' ~ "L_G_G_TP"),
            Treatment = case_when(destSiteID == "L" & subplot == 'CTRL' ~ "LocalControl", 
                                  destSiteID == "G" & subplot == 'CTRL' ~ "LocalControl",
                                  destSiteID == "L" & subplot == 'B' ~ "Warm",
@@ -70,7 +65,7 @@ CleanCommunity_FR_Lautaret <- function(community_FR_Lautaret_raw, community_FR_L
                                 'Patzkea paniculata subsp. paniculata' = "Patzkea paniculata"))%>%
     mutate(SpeciesName = ifelse(is.na(word(SpeciesName, 2)), paste0(SpeciesName, " sp."), SpeciesName))%>%
     filter(!is.na(Treatment))%>%
-    mutate(destPlotID = paste0(plotID, "_",rep),
+    mutate(destPlotID = paste(originSiteID, destSiteID, Replicate, sep='_'),
            UniqueID = paste0(Year, "_", destPlotID),
            destBlockID = NA)%>%
     select(Year, originSiteID, destSiteID, destBlockID, destPlotID, UniqueID, Treatment, SpeciesName, Cover) %>%
@@ -124,12 +119,34 @@ CleanMeta_FR_Lautaret <- function(community_FR_Lautaret){
 #Clean trait data
 CleanTrait_FR_Lautaret <- function(trait_FR_Lautaret_raw){
   dat2 <- trait_FR_Lautaret_raw %>%
-    rename(SpeciesName = species, Individual_number = rep, destPlotID = plot, Trait = trait, destSiteID = climate, Treatment = treatment, Value=value) %>% 
+    dplyr::select(-X)%>%
+    separate(combi_fac, c("destSiteID", "Treatment"), "_") %>%
+    mutate(Replicate = ifelse(nchar(rep)==1, paste0("0", rep), rep))%>%
     mutate(Country = "France",
-           Trait = recode(Trait, 'F_Mass' = 'W_Mass_g',  'D_Mass' = 'Dry_Mass_g', 'L_Area' = 'Leaf_Area_cm2', 'H_Repr' = 'Plant_Rep_Height_cm',  'H_Veg' = 'Plant_Veg_Height_cm'),
-           Treatment = recode(Treatment, "CP" = "LocalControl", "TP" = "Warm")) %>%
-    dplyr::select(Country, destSiteID, destPlotID, Treatment, SpeciesName, Individual_number, Trait, Value) %>%
+           Gradient = "FR_Lautaret",
+           originSiteID = case_when(destSiteID == "L" & Treatment == 'TP' ~ "G", 
+                                             destSiteID == "L" & Treatment == 'CP' ~ "L",
+                                             destSiteID == "G" & Treatment == 'CP' ~ "G",
+                                             destSiteID == "G" & Treatment == 'TP' ~ "L"),
+           Treatment = case_when(destSiteID == "L" & Treatment == 'TP' ~ "Warm", 
+                                          destSiteID == "L" & Treatment == 'CP' ~ "LocalControl",
+                                          destSiteID == "G" & Treatment == 'CP' ~ "LocalControl",
+                                          destSiteID == "G" & Treatment == 'TP' ~ "Cold"))%>%
+    mutate(UniqueID = paste(year, originSiteID, destSiteID, Replicate, sep='_')) %>% 
+    mutate(destPlotID = paste(originSiteID, destSiteID, Replicate, sep='_')) %>%
+    mutate(LNC_mg_g = LNC_mg_g/10,
+           LCC_mg_g = LCC_mg_g/10)%>%
+    rename(Individual_number = num_point, Year = year, SpeciesName = species,
+           Plant_Height_cm = Height_cm,
+           Leaf_Area_cm2 = LA_cm2,
+           LDMC = LDMC_percent,
+           N_percent = LNC_mg_g,
+           C_percent = LCC_mg_g
+           )%>%
+    pivot_longer(cols = Plant_Height_cm:C_percent, names_to = "Trait", values_to = "Value")%>%
+    dplyr::select(Country, Gradient, destSiteID, destPlotID, Treatment, UniqueID, Year, SpeciesName, Individual_number, Trait, Value) %>%
     mutate(Individual_number = as.character(Individual_number), Value = as.numeric(Value)) %>%
+    mutate(PlantID = paste(UniqueID, Individual_number, SpeciesName, sep = "_"))%>%
     filter(!is.na(Value), !is.na(SpeciesName))
   return(dat2)
 }
@@ -140,7 +157,7 @@ ImportClean_FR_Lautaret <- function(){
   ### IMPORT DATA
   community_FR_Lautaret_raw = ImportCommunity_FR_Lautaret()
   community_FR_Lautaret_raw2 = ImportCommunity_FR_Lautaret2()
-  trait_FR_Lautaret_raw = read.table("./data/FR_Lautaret/FR_lautaret_traitdata/TransPlant_Lautaret_traits_2018_30062020.txt")
+  trait_FR_Lautaret_raw = read.csv("./data/FR_Lautaret/FR_lautaret_traitdata/intratraits_cleaned.csv")
   
   ### CLEAN DATA SETS
   cleaned_FR_Lautaret = CleanCommunity_FR_Lautaret(community_FR_Lautaret_raw, community_FR_Lautaret_raw2)
