@@ -99,7 +99,7 @@ CleanTrait_CH_Calanda <- function(trait_CH_Calanda_raw){
            Leaf_Area_cm2 = as.numeric(as.character(Leaf_Area_cm2)),
            LDMC = ifelse(!is.na(Dry_Mass_g)&!is.na(Wet_Mass_g), Dry_Mass_g/Wet_Mass_g, NA),
            SLA_cm2_g = ifelse(!is.na(Leaf_Area_cm2)&!is.na(Dry_Mass_g), Leaf_Area_cm2/Dry_Mass_g, NA)) %>%
-    dplyr::select(Country, destSiteID, SpeciesName, Individual_number, PlantID, Plant_Veg_Height_cm, Plant_Rep_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Area_cm2, SLA_cm2_g, LDMC) %>%
+    dplyr::select(Country, Gradient, destSiteID, SpeciesName, Individual_number, PlantID, Plant_Veg_Height_cm, Plant_Rep_Height_cm, Wet_Mass_g, Dry_Mass_g, Leaf_Area_cm2, SLA_cm2_g, LDMC) %>%
     pivot_longer(cols = Plant_Veg_Height_cm:LDMC, names_to = "Trait", values_to = "Value")%>%
     mutate(PlantID = paste(destSiteID, Individual_number, SpeciesName, sep = "_"))%>%
     filter(!is.na(Value))
