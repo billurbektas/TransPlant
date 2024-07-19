@@ -27,6 +27,7 @@ CleanCommunity_US_Colorado <- function(community_US_Colorado_raw){
            originBlockID = substr(turfID, nchar(turfID)-2, nchar(turfID)-2)) %>% 
       mutate(Treatment = recode(Treatment, "c1" = "Cold", "c2" = "Cold", "w1" = "Warm", "w2" = "Warm", "nu" = "NettedControl", "u_" = "Control", "ws" = "LocalControl")) %>% 
     rename(destPlotID = turfID) %>% 
+    filter(!is.na(Treatment))%>%
     mutate(UniqueID = paste(Year, originSiteID, destSiteID, destBlockID, destPlotID, sep='_'), SpeciesName = recode(SpeciesName, 'Rock' = "rock", 'Moss' = "moss")) %>% 
     mutate(destPlotID = as.character(destPlotID), destBlockID = if (exists('destBlockID', where = .)) as.character(destBlockID) else NA) %>%
     distinct() #removes Viola nuttallii which was doubled in 2019
@@ -89,7 +90,8 @@ CleanTrait_US_Colorado <- function(trait_US_Colorado_raw){
                                   is.na(destSiteID) & originSite == "Pfeiler" ~ "pf",
                                   is.na(destSiteID) & originSite == "Upper Montane"~"um",
                                   .default = destSiteID))%>%
-    mutate(Treatment = recode(Treatment, "c1" = "Cold", "c2" = "Cold", "w1" = "Warm", "w2" = "Warm", "nu" = "NettedControl", "u_" = "Control", "ws" = "LocalControl")) %>% 
+    mutate(Treatment = recode(Treatment, "c1" = "Cold", "c2" = "Cold", "w1" = "Warm", "w2" = "Warm", "nu" = "NettedControl", "u" = "Control", "ws" = "LocalControl")) %>% 
+    filter(!(is.na(Treatment)))%>%
     mutate(Year = as.numeric(Year))%>%
     rename(Wet_Mass_g = "wetMassg", 
            Dry_Mass_g = "dryMassg", 
